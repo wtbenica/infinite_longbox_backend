@@ -101,31 +101,6 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name='DjangoContentType',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('app_label', models.CharField(max_length=100)),
-                ('model', models.CharField(max_length=100)),
-            ],
-            options={
-                'db_table': 'django_content_type',
-                'managed': False,
-            },
-        ),
-        migrations.CreateModel(
-            name='DjangoMigrations',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('app', models.CharField(max_length=255)),
-                ('name', models.CharField(max_length=255)),
-                ('applied', models.DateTimeField()),
-            ],
-            options={
-                'db_table': 'django_migrations',
-                'managed': False,
-            },
-        ),
-        migrations.CreateModel(
             name='DjangoSession',
             fields=[
                 ('session_key', models.CharField(max_length=40, primary_key=True, serialize=False)),
