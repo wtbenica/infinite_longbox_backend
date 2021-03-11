@@ -80,7 +80,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'gcdb',
-        'USER': 'gdb_admin',
+        'USER': 'dbadmin',
         'PASSWORD': '773Gcdb!',
         'HOST': 'localhost',
         'PORT': '3306',

@@ -5,6 +5,7 @@
 #   * Make sure each ForeignKey and OneToOneField has `on_delete` set to the desired behavior
 #   * Remove `managed = False` lines if you wish to allow Django to create, modify, and delete the table
 # Feel free to rename the models, but don't rename db_table values or field names.
+from typing import Tuple
 
 from django.db import models
 
@@ -732,9 +733,9 @@ class GcdPublisher(models.Model):
     year_overall_ended = models.IntegerField(blank=True, null=True)
     year_overall_ended_uncertain = models.IntegerField()
 
-    def natural_key(self):
-        return (self.pk, self.name, self.year_began,
-        self.year_ended,) + self.country.natural_key()
+    def natural_key(self) -> Tuple[str, ...]:
+        return (str(self.pk), self.name, str(self.year_began),
+        str(self.year_ended),) + (str(self.country.natural_key()),)
 
     class Meta:
         managed = False
@@ -999,7 +1000,7 @@ class StddataCountry(models.Model):
     name = models.CharField(max_length=255)
 
     def natural_key(self):
-        return self.name, self.pk
+        return self.name, str(self.pk)
 
     class Meta:
         managed = False
