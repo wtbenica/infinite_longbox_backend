@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
+from gcd_server.credentials import USER_NAME, PASSWORD, ADDRESS
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -80,9 +81,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'gcdb',
-        'USER': 'gdb_admin',
-        'PASSWORD': '773Gcdb!',
-        'HOST': 'localhost',
+        'USER': USER_NAME,
+        'PASSWORD': PASSWORD,
+        'HOST': ADDRESS,
         'PORT': '3306',
     }
 }
