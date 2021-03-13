@@ -5,7 +5,7 @@ from django.core.serializers import serialize
 from django.http import HttpResponse, JsonResponse
 
 # Create your views here.
-from db_query.models import GcdSeries, GcdIssue
+from db_query.models import GcdSeries, GcdIssue, GcdCreditType
 
 
 def index(request):
@@ -25,4 +25,9 @@ def series(request):
 def issue(request, pk_id):
     issue = GcdIssue.objects.filter(pk=pk_id)
     return JsonResponse(json.loads(serialize('json', issue)), safe=False,
+        json_dumps_params={'ensure_ascii': False})
+
+def role(request):
+    roles = GcdCreditType.objects.all()
+    return JsonResponse(json.loads(serialize('json', roles)), safe=False,
         json_dumps_params={'ensure_ascii': False})
