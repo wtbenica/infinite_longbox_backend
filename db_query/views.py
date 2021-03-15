@@ -69,10 +69,10 @@ def roles_list(request):
                         json_dumps_params={'ensure_ascii': False})
 
 
-def credits(request, issue_id: int):
+def stories(request, issue_id: int):
     stories: QuerySet[GcdStory] = GcdStory.objects.filter(issue_id=issue_id)
     story_credits: QuerySet[GcdStoryCredit] = GcdStoryCredit.objects.filter(story__issue=issue_id)
     return JsonResponse(json.loads(
-            "[" + serialize('json', story_credits) + ", " + serialize('json', stories) + "]"),
+            "[" + serialize('json', stories) + ", " + serialize('json', story_credits) + "]"),
             safe=False,
             json_dumps_params={'ensure_ascii': False})

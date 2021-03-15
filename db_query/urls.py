@@ -8,7 +8,7 @@ urlpatterns = [
     path('series/<int:series_id>', views.series, name='series'),
     path('series/<int:series_id>/issues', views.issues_by_series, name='issues'),
     path('issue/<int:issue_id>', views.issue, name='issue'),
-    path('issue/<int:issue_id>/credits', views.credits, name='credits'),
+    path('issue/<int:issue_id>/credits', views.stories, name='credits'),
     path('role', views.roles_list, name='role'),
     path('publisher', views.publishers_list, name='publisher'),
 ]

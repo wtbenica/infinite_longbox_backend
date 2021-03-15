@@ -3,7 +3,8 @@
 #   * Rearrange models' order
 #   * Make sure each model has one field with primary_key=True
 #   * Make sure each ForeignKey and OneToOneField has `on_delete` set to the desired behavior
-#   * Remove `managed = False` lines if you wish to allow Django to create, modify, and delete the table
+#   * Remove `managed = False` lines if you wish to allow Django to create, modify, and delete
+#   the table
 # Feel free to rename the models, but don't rename db_table values or field names.
 from django.db import models
 
@@ -283,7 +284,8 @@ class GcdCreatorMembership(models.Model):
     modified = models.DateTimeField()
     deleted = models.IntegerField()
     creator = models.ForeignKey(GcdCreator, models.DO_NOTHING)
-    membership_type = models.ForeignKey('GcdMembershipType', models.DO_NOTHING, blank=True, null=True)
+    membership_type = models.ForeignKey('GcdMembershipType', models.DO_NOTHING, blank=True,
+                                        null=True)
 
     class Meta:
         managed = False
@@ -529,7 +531,8 @@ class GcdIssue(models.Model):
     no_volume = models.IntegerField()
     display_volume_with_number = models.IntegerField()
     series = models.ForeignKey('GcdSeries', models.DO_NOTHING)
-    indicia_publisher = models.ForeignKey(GcdIndiciaPublisher, models.DO_NOTHING, blank=True, null=True)
+    indicia_publisher = models.ForeignKey(GcdIndiciaPublisher, models.DO_NOTHING, blank=True,
+                                          null=True)
     indicia_pub_not_printed = models.IntegerField()
     brand = models.ForeignKey(GcdBrand, models.DO_NOTHING, blank=True, null=True)
     no_brand = models.IntegerField()
@@ -803,7 +806,8 @@ class GcdSeries(models.Model):
     binding = models.CharField(max_length=255)
     publishing_format = models.CharField(max_length=255)
     has_rating = models.IntegerField()
-    publication_type = models.ForeignKey('GcdSeriesPublicationType', models.DO_NOTHING, blank=True, null=True)
+    publication_type = models.ForeignKey('GcdSeriesPublicationType', models.DO_NOTHING, blank=True,
+                                         null=True)
     is_singleton = models.IntegerField()
     has_about_comics = models.IntegerField()
     has_indicia_printer = models.IntegerField()
