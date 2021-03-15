@@ -16,6 +16,9 @@
       <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>
       <jdbc-url>jdbc:mysql://localhost:3306/gcdb</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
+      <driver-properties>
+        <property name="serverTimezone" value="America/Los_Angeles" />
+      </driver-properties>
     </data-source>
   </component>
 </project>
