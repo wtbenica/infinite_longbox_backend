@@ -412,6 +412,9 @@ class GcdCreditType(models.Model):
     name = models.CharField(unique=True, max_length=50)
     sort_code = models.IntegerField(unique=True)
 
+    def natural_key(self) -> Tuple[str, ...]:
+        return (str(self.pk), self.name, str(self.sort_code))
+
     class Meta:
         managed = False
         db_table = 'gcd_credit_type'
