@@ -327,6 +327,9 @@ class GcdCreatorNameDetail(models.Model):
     family_name = models.CharField(max_length=255)
     given_name = models.CharField(max_length=255)
 
+    def natural_key(self) -> Tuple[str, ...]:
+        return str(self.pk), str(self.name), str(self.sort_name)
+
     class Meta:
         managed = False
         db_table = 'gcd_creator_name_detail'

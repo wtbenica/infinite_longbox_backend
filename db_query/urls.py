@@ -13,5 +13,6 @@ urlpatterns = [
     path('role', views.roles_list, name='role'),
     path('publisher', views.publishers_list, name='publisher'),
     path('creator/<int:creator_id>', views.creator, name='creator'),
+    path('creator/name/<str:name>', views.name, name='creator_by_name'),
     path('story_types', views.story_types, name='story_types'),
 ]

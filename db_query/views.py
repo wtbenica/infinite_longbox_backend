@@ -8,7 +8,7 @@ from django.http import HttpResponse, JsonResponse
 from db_query.models import *
 from db_query.models import GcdStory
 
-ROWS_PER_PAGE = 1000
+ROWS_PER_PAGE = 2000
 
 UNITED_STATES = 225
 
@@ -61,7 +61,7 @@ def roles_list(request):
 
 
 def stories(request, issue_id: int):
-    story_list = GcdStory.objects.filter(issue_id=issue_id)
+    story_list = GcdStory.objects.filter(issue_id=issue_id, type_id__in=[6, 19])
 
     return JsonResponse(
             json.loads(serialize('json', story_list)),
@@ -70,16 +70,14 @@ def stories(request, issue_id: int):
 
 
 def credits(request, issue_id: int):
-    story_credits = GcdStoryCredit.objects.filter(story__issue=issue_id)
+    story_credits = GcdStoryCredit.objects.filter(story__issue=issue_id, story__type_id__in=[6, 19])
 
     js = JsonResponse(
-            json.loads(serialize('json', story_credits)),
+            json.loads(serialize('json', story_credits, use_natural_foreign_keys=True)),
             safe=False,
             json_dumps_params={'ensure_ascii': False})
 
     return js
-
-
 def creator(request, creator_id: int):
     return JsonResponse(json.loads(serialize('json', GcdCreator.objects.filter(pk=creator_id))),
                         safe=False,
@@ -108,3 +106,12 @@ def creators(request, issue_id):
             json.loads(serialize('json', story_list)),
             safe=False,
             json_dumps_params={'ensure_ascii': False})
+
+def name(request, name):
+    creator = GcdCreator.objects.filter(gcd_official_name=name)
+
+    return JsonResponse(
+            json.loads(serialize('json', creator)),
+            safe=False,
+            json_dumps_params={'ensure_ascii': False})
+
