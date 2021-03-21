@@ -6,9 +6,9 @@
 #   * Remove `managed = False` lines if you wish to allow Django to create, modify, and delete
 #   the table
 # Feel free to rename the models, but don't rename db_table values or field names.
-from typing import Tuple
 
 from django.db import models
+from django.db.models import Q
 
 
 class AuthGroup(models.Model):
@@ -327,8 +327,8 @@ class GcdCreatorNameDetail(models.Model):
     family_name = models.CharField(max_length=255)
     given_name = models.CharField(max_length=255)
 
-    def natural_key(self) -> Tuple[str, ...]:
-        return str(self.pk), str(self.name), str(self.sort_name)
+    def natural_key(self):
+        return self.creator
 
     class Meta:
         managed = False
@@ -416,9 +416,9 @@ class GcdCreditType(models.Model):
     name = models.CharField(unique=True, max_length=50)
     sort_code = models.IntegerField(unique=True)
 
-    def natural_key(self) -> Tuple[str, ...]:
-        return str(self.pk), self.name, str(self.sort_code)
-
+    # def natural_key(self) -> Tuple[str, ...]:
+    #     return str(self.pk), self.name, str(self.sort_code)
+    #
     class Meta:
         managed = False
         db_table = 'gcd_credit_type'
@@ -719,6 +719,15 @@ class GcdPrinter(models.Model):
         db_table = 'gcd_printer'
 
 
+class PublisherManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(
+                Q(issue_count__gte=850) | Q(series_count__gte=40),
+                year_began__gte=1900,
+                country_id=225
+        )
+
+
 class GcdPublisher(models.Model):
     name = models.CharField(max_length=255)
     country = models.ForeignKey('StddataCountry', models.DO_NOTHING)
@@ -740,9 +749,7 @@ class GcdPublisher(models.Model):
     year_overall_ended = models.IntegerField(blank=True, null=True)
     year_overall_ended_uncertain = models.IntegerField()
 
-    def natural_key(self) -> Tuple[str, ...]:
-        return (str(self.pk), self.name, str(self.year_began),
-                str(self.year_ended),) + (str(self.country.natural_key()),)
+    objects = PublisherManager()
 
     class Meta:
         managed = False
@@ -823,6 +830,18 @@ class GcdSchool(models.Model):
         db_table = 'gcd_school'
 
 
+class SeriesManager(models.Manager):
+    def get_queryset(self):
+        bobo = super().get_queryset().filter(
+                Q(publisher__issue_count__gte=850)
+                | Q(publisher__series_count__gte=40),
+                publisher__year_began__gte=1900,
+                publisher__country_id=225,
+        )
+
+        return bobo
+
+
 class GcdSeries(models.Model):
     name = models.CharField(max_length=255)
     sort_name = models.CharField(max_length=255)
@@ -866,6 +885,8 @@ class GcdSeries(models.Model):
     is_singleton = models.IntegerField()
     has_about_comics = models.IntegerField()
     has_indicia_printer = models.IntegerField()
+
+    objects = SeriesManager()
 
     def __str__(self):
         return f'{self.name} {self.publication_dates}'
@@ -914,6 +935,17 @@ class GcdSeriesPublicationType(models.Model):
         db_table = 'gcd_series_publication_type'
 
 
+class StoryManager(models.Manager):
+    def get_queryset(self):
+        return super().filter(
+                Q(series__publisher__country_id=225) |
+                Q(series__publisher__series_count__gte=40),
+                type__in=[6, 19],
+                series__publisher__year_began__gte=1900,
+                series__publisher__issue_count__gte=850,
+        )
+
+
 class GcdStory(models.Model):
     title = models.CharField(max_length=255)
     title_inferred = models.IntegerField()
@@ -952,6 +984,18 @@ class GcdStory(models.Model):
         db_table = 'gcd_story'
 
 
+class StoryCreditManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(
+                Q(story__issue__series__publisher__issue_count__gte=850) |
+                Q(story__issue__series__publisher__series_count__gte=40),
+                story__type__in=[6, 19],
+                story__issue__series__publisher__year_began__gte=1900,
+                story__issue__series__publisher__country_id=225,
+
+        )
+
+
 class GcdStoryCredit(models.Model):
     created = models.DateTimeField()
     modified = models.DateTimeField()
@@ -967,6 +1011,8 @@ class GcdStoryCredit(models.Model):
     story = models.ForeignKey(GcdStory, models.DO_NOTHING)
     signature = models.ForeignKey(GcdCreatorSignature, models.DO_NOTHING,
                                   blank=True, null=True)
+
+    objects = StoryCreditManager()
 
     class Meta:
         managed = False
