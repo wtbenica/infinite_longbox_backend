@@ -52,7 +52,7 @@ def all_roles(request):
 
 
 def stories_by_issue(request, issue_id: int):
-    story_list = GcdStory.objects.filter(issue_id=issue_id)
+    story_list = GcdStory.objects.filter(issue=issue_id)
 
     return StandardResponse(story_list)
 
@@ -113,19 +113,37 @@ def creator_credits(request, creator_id):
     return StandardResponse(story_credits)
 
 
-def name_detail_list(request, bob: str):
-    ids = [int(d) for d in bob.strip('[]').split(", ")]
+def name_detail_list(request, name_detail_ids: str):
+    ids = [int(id) for id in name_detail_ids.strip('[]').split(", ")]
 
     return StandardResponse(GcdCreatorNameDetail.objects.filter(pk__in=ids))
 
 
-def creators_list(request, bob: str):
-    ids = [int(d) for d in bob.strip('[]').split(", ")]
+def creators_list(request, creator_ids: str):
+    ids = [int(id) for id in creator_ids.strip('[]').split(", ")]
 
     return StandardResponse(GcdCreator.objects.filter(pk__in=ids))
+
+
+def issues_by_ids(request, issue_ids: str):
+    ids = [int(id) for id in issue_ids.strip('[]').split(", ")]
+
+    return StandardResponse(GcdIssue.objects.filter(pk__in=ids)[:1000])
+
+
+def credits_by_stories(request, story_ids: str):
+    ids = [int(id) for id in story_ids.strip('[]').split(", ")]
+
+    return StandardResponse(GcdStoryCredit.objects.filter(story__in=ids))
 
 
 class StandardResponse(JsonResponse):
     def __init__(self, data, **kwargs):
         super().__init__(json.loads(serialize('json', data)), safe=False, json_dumps_params={
             'ensure_ascii': False}, **kwargs)
+
+
+def name_detail_by_creator(request, creator_ids: str):
+    ids = [int(id) for id in creator_ids.strip('[]').split(", ")]
+
+    return StandardResponse(GcdCreatorNameDetail.objects.filter(creator__in=ids))

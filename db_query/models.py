@@ -559,6 +559,17 @@ class GcdIndiciaPublisher(models.Model):
         managed = False
         db_table = 'gcd_indicia_publisher'
 
+class IssueManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(
+                Q(series__publisher__issue_count__gte=850)
+                | Q(series__publisher__series_count__gte=40),
+                series__publisher__year_began__gte=1900,
+                series__publisher__country_id=225,
+                series__is_comics_publication=1,
+                series__country=225,
+                series__language=25
+        )
 
 class GcdIssue(models.Model):
     number = models.CharField(max_length=50)
@@ -604,6 +615,8 @@ class GcdIssue(models.Model):
     no_rating = models.IntegerField()
     volume_not_printed = models.IntegerField()
     no_indicia_printer = models.IntegerField()
+
+    objects = IssueManager()
 
     class Meta:
         managed = False
@@ -838,8 +851,8 @@ class SeriesManager(models.Manager):
                 publisher__year_began__gte=1900,
                 publisher__country_id=225,
                 is_comics_publication=1,
-                country_id=225,
-                language_id=25
+                country=225,
+                language=25
         )
 
         return bobo
@@ -940,15 +953,15 @@ class GcdSeriesPublicationType(models.Model):
 
 class StoryManager(models.Manager):
     def get_queryset(self):
-        return super().filter(
-                Q(series__publisher__issue_count__gte=850) |
-                Q(series__publisher__series_count__gte=40),
+        return super().get_queryset().filter(
+                Q(issue__series__publisher__issue_count__gte=850) |
+                Q(issue__series__publisher__series_count__gte=40),
                 type__in=[6, 19],
-                series__publisher__year_began__gte=1900,
-                series__publisher__country_id=225,
-                series__country_id=225,
-                series__is_comics_publication=1,
-                series__language_id=25
+                issue__series__publisher__year_began__gte=1900,
+                issue__series__publisher__country=225,
+                issue__series__country=225,
+                issue__series__is_comics_publication=1,
+                issue__series__language=25
         )
 
 
@@ -985,6 +998,8 @@ class GcdStory(models.Model):
     deleted = models.IntegerField()
     first_line = models.CharField(max_length=255)
 
+    objects = StoryManager()
+
     class Meta:
         managed = False
         db_table = 'gcd_story'
@@ -997,10 +1012,10 @@ class StoryCreditManager(models.Manager):
                 Q(story__issue__series__publisher__series_count__gte=40),
                 story__type__in=[6, 19],
                 story__issue__series__publisher__year_began__gte=1900,
-                story__issue__series__publisher__country_id=225,
-                story__issue__series__country_id=225,
+                story__issue__series__publisher__country=225,
+                story__issue__series__country=225,
                 story__issue__series__is_comics_publication=1,
-                story__issue__series__language_id=25,
+                story__issue__series__language=25,
         )
 
 
