@@ -22,7 +22,7 @@ def all_series(request, page: int):
 
 
 def series_by_id(request, series_id: int):
-    series = GcdSeries.objects.filter(pk_id=series_id)
+    series = GcdSeries.objects.filter(pk=series_id)
 
     return StandardResponse(series)
 
@@ -89,7 +89,7 @@ def creators_by_issue(request, issue_id):
 
 
 def creator_by_name(request, name):
-    creator = GcdCreator.objects.filter(gcd_official_name=name)
+    creator = GcdCreatorNameDetail.objects.filter(name=name)
 
     return StandardResponse(creator)
 
@@ -111,6 +111,12 @@ def creator_credits(request, creator_id):
     story_credits = GcdStoryCredit.objects.filter(creator__creator=creator_id)
 
     return StandardResponse(story_credits)
+
+
+def name_detail_list(request, bob: str):
+    ids = [int(d) for d in bob.strip('[]').split(", ")]
+
+    return StandardResponse(GcdCreatorNameDetail.objects.filter(pk__in=ids))
 
 
 def creators_list(request, bob: str):

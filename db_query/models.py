@@ -837,6 +837,9 @@ class SeriesManager(models.Manager):
                 | Q(publisher__series_count__gte=40),
                 publisher__year_began__gte=1900,
                 publisher__country_id=225,
+                is_comics_publication=1,
+                country_id=225,
+                language_id=25
         )
 
         return bobo
@@ -938,11 +941,14 @@ class GcdSeriesPublicationType(models.Model):
 class StoryManager(models.Manager):
     def get_queryset(self):
         return super().filter(
-                Q(series__publisher__country_id=225) |
+                Q(series__publisher__issue_count__gte=850) |
                 Q(series__publisher__series_count__gte=40),
                 type__in=[6, 19],
                 series__publisher__year_began__gte=1900,
-                series__publisher__issue_count__gte=850,
+                series__publisher__country_id=225,
+                series__country_id=225,
+                series__is_comics_publication=1,
+                series__language_id=25
         )
 
 
@@ -992,7 +998,9 @@ class StoryCreditManager(models.Manager):
                 story__type__in=[6, 19],
                 story__issue__series__publisher__year_began__gte=1900,
                 story__issue__series__publisher__country_id=225,
-
+                story__issue__series__country_id=225,
+                story__issue__series__is_comics_publication=1,
+                story__issue__series__language_id=25,
         )
 
 
