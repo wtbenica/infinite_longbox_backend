@@ -94,15 +94,16 @@ def creator_by_name(request, name):
     return StandardResponse(creator)
 
 
-def creator_stories(request, creator_id):
+def stories_by_name_detail(request, name_detail_ids):
+    ids = [int(id) for id in name_detail_ids.strip('[]').split(", ")]
+
     story_list = GcdStory.objects.raw("""
                                     select distinct gy.*
                                     from gcd_story gy
                                     join gcd_story_credit gsc on gy.id = gsc.story_id
                                     join gcd_creator_name_detail gcnd on gsc.creator_id = gcnd.id
-                                    join gcd_creator gc on gcnd.creator_id = gc.id
-                                    where gc.id = %s
-                                    """, [creator_id])
+                                    where gcnd.id in %s
+                                    """, [ids])
 
     return StandardResponse(story_list)
 
@@ -128,7 +129,7 @@ def creators_list(request, creator_ids: str):
 def issues_by_ids(request, issue_ids: str):
     ids = [int(id) for id in issue_ids.strip('[]').split(", ")]
 
-    return StandardResponse(GcdIssue.objects.filter(pk__in=ids)[:1000])
+    return StandardResponse(GcdIssue.objects.filter(pk__in=ids))
 
 
 def credits_by_stories(request, story_ids: str):
