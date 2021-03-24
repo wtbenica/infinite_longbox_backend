@@ -16,7 +16,7 @@ def index(request):
 
 def all_series(request, page: int):
     series_list = GcdSeries.objects.all().order_by('sort_name')[
-                  page * ROWS_PER_PAGE:(page + 1) * ROWS_PER_PAGE]
+    page * ROWS_PER_PAGE:(page + 1) * ROWS_PER_PAGE]
 
     return StandardResponse(series_list)
 
@@ -77,13 +77,13 @@ def all_story_types(request):
 
 def creators_by_issue(request, issue_id):
     creator_list: RawQuerySet = GcdCreator.objects.raw(
-            """select distinct gc.* 
-            from gcd_creator gc 
-            join gcd_creator_name_detail gcnd on gc.id = gcnd.creator_id 
-            join gcd_story_credit gsc on gcnd.id = gsc.creator_id 
-            join gcd_story gs on gsc.story_id = gs.id 
-            join gcd_issue gi on gs.issue_id = gi.id
-            where gs.issue_id =  %s""", [issue_id])
+        """select distinct gc.* 
+        from gcd_creator gc 
+        join gcd_creator_name_detail gcnd on gc.id = gcnd.creator_id 
+        join gcd_story_credit gsc on gcnd.id = gsc.creator_id 
+        join gcd_story gs on gsc.story_id = gs.id 
+        join gcd_issue gi on gs.issue_id = gi.id
+        where gs.issue_id =  %s""", [issue_id])
 
     return StandardResponse(creator_list)
 
@@ -140,11 +140,19 @@ def credits_by_stories(request, story_ids: str):
 
 class StandardResponse(JsonResponse):
     def __init__(self, data, **kwargs):
-        super().__init__(json.loads(serialize('json', data)), safe=False, json_dumps_params={
-            'ensure_ascii': False}, **kwargs)
+        super().__init__(json.loads(serialize('json', data)), safe=False,
+            json_dumps_params={
+                'ensure_ascii': False}, **kwargs)
 
 
 def name_detail_by_creator(request, creator_ids: str):
     ids = [int(id) for id in creator_ids.strip('[]').split(", ")]
 
-    return StandardResponse(GcdCreatorNameDetail.objects.filter(creator__in=ids))
+    return StandardResponse(
+        GcdCreatorNameDetail.objects.filter(creator__in=ids))
+
+
+def stories_by_name(request, names: str):
+    names = [name for name in names.strip('[]').split(", ")]
+
+    return GcdStory.objects.filter(Q())

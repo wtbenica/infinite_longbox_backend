@@ -44,7 +44,9 @@ name_detail_urls = [
 
 story_urls = [
     path('stories/<str:story_ids>/credits', views.credits_by_stories,
-        name='credits_by_stories')
+        name='credits_by_stories'),
+    path('stories/<str:names>/name', views.stories_by_name,
+        name='stories_by_name')
 ]
 
 urlpatterns = [
