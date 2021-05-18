@@ -15,7 +15,7 @@ def index(request):
 
 
 def all_series(request, page: int):
-    series_list = GcdSeries.objects.all().order_by('sort_name')[
+    series_list = GcdSeries.objects.all()[
     page * ROWS_PER_PAGE:(page + 1) * ROWS_PER_PAGE]
 
     return StandardResponse(series_list)
@@ -108,8 +108,9 @@ def stories_by_name_detail(request, name_detail_ids):
     return StandardResponse(story_list)
 
 
-def creator_credits(request, creator_id):
-    story_credits = GcdStoryCredit.objects.filter(creator__creator=creator_id)
+def creator_credits(request, creator_ids: str):
+    ids = [int(id) for id in creator_ids.strip('[]').split(', ')]
+    story_credits = GcdStoryCredit.objects.filter(creator__creator__in=ids)
 
     return StandardResponse(story_credits)
 
@@ -137,6 +138,10 @@ def credits_by_stories(request, story_ids: str):
 
     return StandardResponse(GcdStoryCredit.objects.filter(story__in=ids))
 
+def extracts_by_stories(request, story_ids: str):
+    ids = [int(id) for id in story_ids.strip('[]').split(", ")]
+    # TODO: add whatever model is needed for "my_credit"
+    return StandardResponse(GcdStoryCredit.objects.filter(story__in=ids))
 
 def name_detail_by_creator(request, creator_ids: str):
     ids = [int(id) for id in creator_ids.strip('[]').split(", ")]
@@ -152,12 +157,25 @@ def stories_by_name(request, name: str):
         GcdStory.objects.filter(inks__contains=name) |
         GcdStory.objects.filter(colors__contains=name) |
         GcdStory.objects.filter(letters__contains=name) |
-        GcdStory.objects.filter(script__contains=name))
+        GcdStory.objects.filter(editing__contains=name))
 
 
 class StandardResponse(JsonResponse):
     def __init__(self, data, **kwargs):
         super().__init__(
-            json.loads(serialize('json', data)),
+            json.loads(serialize('json', data, use_natural_foreign_keys=True)),
             safe=False,
             json_dumps_params={'ensure_ascii': False}, **kwargs)
+
+
+def story(request, story_ids: str):
+    ids = [int(id) for id in story_ids.strip('[]').split(', ')]
+
+    return StandardResponse(GcdStory.objects.filter(pk__in=ids))
+
+
+def name_details_by_creator(request, creator_ids):
+    ids = [int(id) for id in creator_ids.strip('[]').split(', ')]
+
+    return StandardResponse(
+        GcdCreatorNameDetail.objects.filter(creator__in=ids))

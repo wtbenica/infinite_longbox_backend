@@ -24,7 +24,7 @@ creator_urls = [
     path('creator/<int:creator_id>', views.creator, name='creator'),
     # path('creator/<int:creator_id>/stories', views.creator_stories,
     #      name='creator_series'),
-    path('creator/<int:creator_id>/credits', views.creator_credits,
+    path('creator/<str:creator_ids>/credits', views.creator_credits,
         name='creator_credits'),
     path('creators/<str:creator_ids>/name_details',
         views.name_detail_by_creator,
@@ -32,28 +32,35 @@ creator_urls = [
     path('creator_list/<str:creator_ids>', views.creators_list,
         name='creators_list'),
     path('creator_name/<str:name>/stories', views.stories_by_name,
-        name='stories_by_name')
+        name='stories_by_name'),
+    path('creator_name/<str:name>', views.creator)
 ]
 
 name_detail_urls = [
     path('name_detail/name/<str:name>', views.creator_by_name,
-        name='creator_by_name'),
+        name='name_detail_by_name'),
     path('name_detail/<str:name_detail_ids>', views.name_detail_list,
         name='name_detail_list'),
     path('name_detail/<str:name_detail_ids>/stories',
-        views.stories_by_name_detail,
-        name='creator_series'),
+        views.stories_by_name_detail, name='stories_by_name_detail'),
+    path('name_details/creator_ids/<str:creator_ids>',
+        views.name_details_by_creator, name='name_details_by_creator')
 ]
 
 story_urls = [
     path('stories/<str:story_ids>/credits', views.credits_by_stories,
         name='credits_by_stories'),
+    path('stories/<str:story_ids>/extracts',
+        views.extracts_by_stories, name='extracts_by_stories'),
+    path('story/<str:story_ids>', views.story, name='story')
 ]
 
-urlpatterns = [
-                  path('', views.index, name='index'),
-                  path('role', views.all_roles, name='role'),
-                  path('publisher', views.all_publishers, name='publisher'),
-                  path('story_types', views.all_story_types,
-                      name='story_types'),
-              ] + series_urls + issue_urls + creator_urls + name_detail_urls + story_urls
+static_urls = [
+    path('', views.index, name='index'),
+    path('role', views.all_roles, name='role'),
+    path('publisher', views.all_publishers, name='publisher'),
+    path('story_types', views.all_story_types,
+        name='story_types'),
+]
+
+urlpatterns = series_urls + issue_urls + creator_urls + name_detail_urls + story_urls + static_urls

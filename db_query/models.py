@@ -84,7 +84,7 @@ class DjangoAdminLog(models.Model):
     action_flag = models.PositiveSmallIntegerField()
     change_message = models.TextField()
     content_type = models.ForeignKey('DjangoContentType', models.DO_NOTHING,
-                                     blank=True, null=True)
+        blank=True, null=True)
     user = models.ForeignKey(AuthUser, models.DO_NOTHING)
 
     class Meta:
@@ -136,7 +136,7 @@ class GcdAward(models.Model):
 
 class GcdBiblioEntry(models.Model):
     story_ptr = models.OneToOneField('GcdStory', models.DO_NOTHING,
-                                     primary_key=True)
+        primary_key=True)
     page_began = models.IntegerField(blank=True, null=True)
     page_ended = models.IntegerField(blank=True, null=True)
     abstract = models.TextField()
@@ -237,17 +237,17 @@ class GcdCreator(models.Model):
     modified = models.DateTimeField()
     deleted = models.IntegerField()
     birth_country = models.ForeignKey('StddataCountry', models.DO_NOTHING,
-                                      blank=True, null=True,
-                                      related_name='%(class)s_birth_country')
+        blank=True, null=True,
+        related_name='%(class)s_birth_country')
     birth_date = models.ForeignKey('StddataDate', models.DO_NOTHING, blank=True,
-                                   null=True,
-                                   related_name='%(class)s_birth_date')
+        null=True,
+        related_name='%(class)s_birth_date')
     death_country = models.ForeignKey('StddataCountry', models.DO_NOTHING,
-                                      blank=True, null=True,
-                                      related_name='%(class)s_death_country')
+        blank=True, null=True,
+        related_name='%(class)s_death_country')
     death_date = models.ForeignKey('StddataDate', models.DO_NOTHING, blank=True,
-                                   null=True,
-                                   related_name='%(class)s_death_date')
+        null=True,
+        related_name='%(class)s_death_date')
     sort_name = models.CharField(max_length=255)
 
     def __str__(self):
@@ -265,10 +265,10 @@ class GcdCreatorArtInfluence(models.Model):
     modified = models.DateTimeField()
     deleted = models.IntegerField()
     creator = models.ForeignKey(GcdCreator, models.DO_NOTHING,
-                                related_name='%(class)s_creator')
+        related_name='%(class)s_creator')
     influence_link = models.ForeignKey(GcdCreator, models.DO_NOTHING,
-                                       blank=True, null=True,
-                                       related_name='%(class)s_influence_link')
+        blank=True, null=True,
+        related_name='%(class)s_influence_link')
 
     class Meta:
         managed = False
@@ -285,7 +285,7 @@ class GcdCreatorDegree(models.Model):
     creator = models.ForeignKey(GcdCreator, models.DO_NOTHING)
     degree = models.ForeignKey('GcdDegree', models.DO_NOTHING)
     school = models.ForeignKey('GcdSchool', models.DO_NOTHING, blank=True,
-                               null=True)
+        null=True)
 
     class Meta:
         managed = False
@@ -295,10 +295,10 @@ class GcdCreatorDegree(models.Model):
 class GcdCreatorMembership(models.Model):
     organization_name = models.CharField(max_length=200)
     membership_year_began = models.PositiveSmallIntegerField(blank=True,
-                                                             null=True)
+        null=True)
     membership_year_began_uncertain = models.IntegerField()
     membership_year_ended = models.PositiveSmallIntegerField(blank=True,
-                                                             null=True)
+        null=True)
     membership_year_ended_uncertain = models.IntegerField()
     notes = models.TextField()
     created = models.DateTimeField()
@@ -306,7 +306,7 @@ class GcdCreatorMembership(models.Model):
     deleted = models.IntegerField()
     creator = models.ForeignKey(GcdCreator, models.DO_NOTHING)
     membership_type = models.ForeignKey('GcdMembershipType', models.DO_NOTHING,
-                                        blank=True, null=True)
+        blank=True, null=True)
 
     class Meta:
         managed = False
@@ -320,16 +320,16 @@ class GcdCreatorNameDetail(models.Model):
     deleted = models.IntegerField()
     creator = models.ForeignKey(GcdCreator, models.DO_NOTHING)
     type = models.ForeignKey('GcdNameType', models.DO_NOTHING, blank=True,
-                             null=True)
+        null=True)
     sort_name = models.CharField(max_length=255)
     is_official_name = models.IntegerField()
     in_script = models.ForeignKey('StddataScript', models.DO_NOTHING)
     family_name = models.CharField(max_length=255)
     given_name = models.CharField(max_length=255)
 
-    def natural_key(self):
-        return self.creator
-
+    # def natural_key(self):
+    #     return self.creator
+    #
     class Meta:
         managed = False
         db_table = 'gcd_creator_name_detail'
@@ -346,7 +346,7 @@ class GcdCreatorNonComicWork(models.Model):
     deleted = models.IntegerField()
     creator = models.ForeignKey(GcdCreator, models.DO_NOTHING)
     work_role = models.ForeignKey('GcdNonComicWorkRole', models.DO_NOTHING,
-                                  blank=True, null=True)
+        blank=True, null=True)
     work_type = models.ForeignKey('GcdNonComicWorkType', models.DO_NOTHING)
 
     class Meta:
@@ -360,10 +360,10 @@ class GcdCreatorRelation(models.Model):
     modified = models.DateTimeField()
     deleted = models.IntegerField()
     from_creator = models.ForeignKey(GcdCreator, models.DO_NOTHING,
-                                     related_name='%(class)s_from_creator')
+        related_name='%(class)s_from_creator')
     relation_type = models.ForeignKey('GcdRelationType', models.DO_NOTHING)
     to_creator = models.ForeignKey(GcdCreator, models.DO_NOTHING,
-                                   related_name='%(class)s_to_creator')
+        related_name='%(class)s_to_creator')
 
     class Meta:
         managed = False
@@ -373,7 +373,7 @@ class GcdCreatorRelation(models.Model):
 class GcdCreatorRelationCreatorName(models.Model):
     creatorrelation = models.ForeignKey(GcdCreatorRelation, models.DO_NOTHING)
     creatornamedetail = models.ForeignKey(GcdCreatorNameDetail,
-                                          models.DO_NOTHING)
+        models.DO_NOTHING)
 
     class Meta:
         managed = False
@@ -482,11 +482,11 @@ class GcdFeatureRelation(models.Model):
     modified = models.DateTimeField()
     notes = models.TextField()
     from_feature = models.ForeignKey(GcdFeature, models.DO_NOTHING,
-                                     related_name='%(class)s_from_feature')
+        related_name='%(class)s_from_feature')
     relation_type = models.ForeignKey('GcdFeatureRelationType',
-                                      models.DO_NOTHING)
+        models.DO_NOTHING)
     to_feature = models.ForeignKey(GcdFeature, models.DO_NOTHING,
-                                   related_name='%(class)s_to_feature')
+        related_name='%(class)s_to_feature')
 
     class Meta:
         managed = False
@@ -559,17 +559,19 @@ class GcdIndiciaPublisher(models.Model):
         managed = False
         db_table = 'gcd_indicia_publisher'
 
+
 class IssueManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().filter(
-                Q(series__publisher__issue_count__gte=850)
-                | Q(series__publisher__series_count__gte=40),
-                series__publisher__year_began__gte=1900,
-                series__publisher__country_id=225,
-                series__is_comics_publication=1,
-                series__country=225,
-                series__language=25
+            Q(series__publisher__issue_count__gte=850)
+            | Q(series__publisher__series_count__gte=40),
+            series__publisher__year_began__gte=1900,
+            series__publisher__country_id=225,
+            series__is_comics_publication=1,
+            series__country=225,
+            series__language=25
         )
+
 
 class GcdIssue(models.Model):
     number = models.CharField(max_length=50)
@@ -578,17 +580,17 @@ class GcdIssue(models.Model):
     display_volume_with_number = models.IntegerField()
     series = models.ForeignKey('GcdSeries', models.DO_NOTHING)
     indicia_publisher = models.ForeignKey(GcdIndiciaPublisher,
-                                          models.DO_NOTHING, blank=True, null=True)
+        models.DO_NOTHING, blank=True, null=True)
     indicia_pub_not_printed = models.IntegerField()
     brand = models.ForeignKey(GcdBrand, models.DO_NOTHING, blank=True,
-                              null=True)
+        null=True)
     no_brand = models.IntegerField()
     publication_date = models.CharField(max_length=255)
     key_date = models.CharField(max_length=10)
     sort_code = models.IntegerField()
     price = models.CharField(max_length=255)
     page_count = models.DecimalField(max_digits=10, decimal_places=3,
-                                     blank=True, null=True)
+        blank=True, null=True)
     page_count_uncertain = models.IntegerField()
     indicia_frequency = models.CharField(max_length=255)
     no_indicia_frequency = models.IntegerField()
@@ -603,7 +605,7 @@ class GcdIssue(models.Model):
     valid_isbn = models.CharField(max_length=13)
     no_isbn = models.IntegerField()
     variant_of = models.ForeignKey('self', models.DO_NOTHING, blank=True,
-                                   null=True)
+        null=True)
     variant_name = models.CharField(max_length=255)
     barcode = models.CharField(max_length=38)
     no_barcode = models.IntegerField()
@@ -653,9 +655,9 @@ class GcdIssueIndiciaPrinter(models.Model):
 
 class GcdIssueReprint(models.Model):
     origin_issue = models.ForeignKey(GcdIssue, models.DO_NOTHING,
-                                     related_name='%(class)s_origin_issue')
+        related_name='%(class)s_origin_issue')
     target_issue = models.ForeignKey(GcdIssue, models.DO_NOTHING,
-                                     related_name='%(class)s_target_issue')
+        related_name='%(class)s_target_issue')
     notes = models.TextField()
     reserved = models.IntegerField()
 
@@ -701,7 +703,7 @@ class GcdNonComicWorkYear(models.Model):
     work_year = models.PositiveSmallIntegerField(blank=True, null=True)
     work_year_uncertain = models.IntegerField()
     non_comic_work = models.ForeignKey(GcdCreatorNonComicWork,
-                                       models.DO_NOTHING)
+        models.DO_NOTHING)
 
     class Meta:
         managed = False
@@ -735,9 +737,9 @@ class GcdPrinter(models.Model):
 class PublisherManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().filter(
-                Q(issue_count__gte=850) | Q(series_count__gte=40),
-                year_began__gte=1900,
-                country_id=225
+            Q(issue_count__gte=850) | Q(series_count__gte=40),
+            year_began__gte=1900,
+            country_id=225
         )
 
 
@@ -780,9 +782,9 @@ class GcdReceivedAward(models.Model):
     award_year_uncertain = models.IntegerField()
     notes = models.TextField()
     award = models.ForeignKey(GcdAward, models.DO_NOTHING, blank=True,
-                              null=True)
+        null=True)
     content_type = models.ForeignKey(DjangoContentType, models.DO_NOTHING,
-                                     blank=True, null=True)
+        blank=True, null=True)
 
     class Meta:
         managed = False
@@ -800,9 +802,9 @@ class GcdRelationType(models.Model):
 
 class GcdReprint(models.Model):
     origin = models.ForeignKey('GcdStory', models.DO_NOTHING,
-                               related_name='%(class)s_origin')
+        related_name='%(class)s_origin')
     target = models.ForeignKey('GcdStory', models.DO_NOTHING,
-                               related_name='%(class)s_target')
+        related_name='%(class)s_target')
     notes = models.TextField()
     reserved = models.IntegerField()
 
@@ -813,9 +815,9 @@ class GcdReprint(models.Model):
 
 class GcdReprintFromIssue(models.Model):
     origin_issue = models.ForeignKey(GcdIssue, models.DO_NOTHING,
-                                     related_name='%(class)s_origin')
+        related_name='%(class)s_origin')
     target = models.ForeignKey('GcdStory', models.DO_NOTHING,
-                               related_name='%(class)s_target')
+        related_name='%(class)s_target')
     notes = models.TextField()
     reserved = models.IntegerField()
 
@@ -845,14 +847,18 @@ class GcdSchool(models.Model):
 
 class SeriesManager(models.Manager):
     def get_queryset(self):
-        bobo = super().get_queryset().filter(
-                Q(publisher__issue_count__gte=850)
-                | Q(publisher__series_count__gte=40),
-                publisher__year_began__gte=1900,
-                publisher__country_id=225,
-                is_comics_publication=1,
-                country=225,
-                language=25
+        exclude_keywords = Q(publishing_format__contains='collected') | Q(
+            publishing_format__contains='trade paperback') | Q(
+            publishing_format__contains='portfolio')
+
+        bobo = super().get_queryset().exclude(exclude_keywords).filter(
+            Q(publisher__issue_count__gte=850) | Q(
+                publisher__series_count__gte=40),
+            publisher__year_began__gte=1900,
+            publisher__country_id=225,
+            is_comics_publication=1,
+            country=225,
+            language=25
         )
 
         return bobo
@@ -868,11 +874,11 @@ class GcdSeries(models.Model):
     year_ended_uncertain = models.IntegerField()
     publication_dates = models.CharField(max_length=255)
     first_issue = models.ForeignKey(GcdIssue, models.DO_NOTHING, blank=True,
-                                    null=True,
-                                    related_name='%(class)s_first_issue')
+        null=True,
+        related_name='%(class)s_first_issue')
     last_issue = models.ForeignKey(GcdIssue, models.DO_NOTHING, blank=True,
-                                   null=True,
-                                   related_name='%(class)s_last_issue')
+        null=True,
+        related_name='%(class)s_last_issue')
     is_current = models.IntegerField()
     publisher = models.ForeignKey(GcdPublisher, models.DO_NOTHING)
     country = models.ForeignKey('StddataCountry', models.DO_NOTHING)
@@ -897,7 +903,7 @@ class GcdSeries(models.Model):
     publishing_format = models.CharField(max_length=255)
     has_rating = models.IntegerField()
     publication_type = models.ForeignKey('GcdSeriesPublicationType',
-                                         models.DO_NOTHING, blank=True, null=True)
+        models.DO_NOTHING, blank=True, null=True)
     is_singleton = models.IntegerField()
     has_about_comics = models.IntegerField()
     has_indicia_printer = models.IntegerField()
@@ -914,15 +920,15 @@ class GcdSeries(models.Model):
 
 class GcdSeriesBond(models.Model):
     origin = models.ForeignKey(GcdSeries, models.DO_NOTHING,
-                               related_name='%(class)s_origin')
+        related_name='%(class)s_origin')
     target = models.ForeignKey(GcdSeries, models.DO_NOTHING,
-                               related_name='%(class)s_target')
+        related_name='%(class)s_target')
     origin_issue = models.ForeignKey(GcdIssue, models.DO_NOTHING, blank=True,
-                                     null=True,
-                                     related_name='%(class)s_origin_issue')
+        null=True,
+        related_name='%(class)s_origin_issue')
     target_issue = models.ForeignKey(GcdIssue, models.DO_NOTHING, blank=True,
-                                     null=True,
-                                     related_name='%(class)s_target_issue')
+        null=True,
+        related_name='%(class)s_target_issue')
     bond_type = models.ForeignKey('GcdSeriesBondType', models.DO_NOTHING)
     notes = models.TextField()
     reserved = models.IntegerField()
@@ -954,14 +960,14 @@ class GcdSeriesPublicationType(models.Model):
 class StoryManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().filter(
-                Q(issue__series__publisher__issue_count__gte=850) |
-                Q(issue__series__publisher__series_count__gte=40),
-                type__in=[6, 19],
-                issue__series__publisher__year_began__gte=1900,
-                issue__series__publisher__country=225,
-                issue__series__country=225,
-                issue__series__is_comics_publication=1,
-                issue__series__language=25
+            Q(issue__series__publisher__issue_count__gte=850) |
+            Q(issue__series__publisher__series_count__gte=40),
+            type__in=[6, 19],
+            issue__series__publisher__year_began__gte=1900,
+            issue__series__publisher__country=225,
+            issue__series__country=225,
+            issue__series__is_comics_publication=1,
+            issue__series__language=25
         )
 
 
@@ -971,7 +977,7 @@ class GcdStory(models.Model):
     feature = models.CharField(max_length=255)
     sequence_number = models.IntegerField()
     page_count = models.DecimalField(max_digits=10, decimal_places=3,
-                                     blank=True, null=True)
+        blank=True, null=True)
     issue = models.ForeignKey(GcdIssue, models.DO_NOTHING)
     script = models.TextField()
     pencils = models.TextField()
@@ -1008,14 +1014,14 @@ class GcdStory(models.Model):
 class StoryCreditManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().filter(
-                Q(story__issue__series__publisher__issue_count__gte=850) |
-                Q(story__issue__series__publisher__series_count__gte=40),
-                story__type__in=[6, 19],
-                story__issue__series__publisher__year_began__gte=1900,
-                story__issue__series__publisher__country=225,
-                story__issue__series__country=225,
-                story__issue__series__is_comics_publication=1,
-                story__issue__series__language=25,
+            Q(story__issue__series__publisher__issue_count__gte=850) |
+            Q(story__issue__series__publisher__series_count__gte=40),
+            story__type__in=[6, 19],
+            story__issue__series__publisher__year_began__gte=1900,
+            story__issue__series__publisher__country=225,
+            story__issue__series__country=225,
+            story__issue__series__is_comics_publication=1,
+            story__issue__series__language=25,
         )
 
 
@@ -1033,13 +1039,50 @@ class GcdStoryCredit(models.Model):
     credit_type = models.ForeignKey(GcdCreditType, models.DO_NOTHING)
     story = models.ForeignKey(GcdStory, models.DO_NOTHING)
     signature = models.ForeignKey(GcdCreatorSignature, models.DO_NOTHING,
-                                  blank=True, null=True)
+        blank=True, null=True)
 
     objects = StoryCreditManager()
 
     class Meta:
         managed = False
         db_table = 'gcd_story_credit'
+
+
+class ExtractedStoryCreditManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(
+            Q(story__issue__series__publisher__issue_count__gte=850) |
+            Q(story__issue__series__publisher__series_count__gte=40),
+            story__type__in=[6, 19],
+            story__issue__series__publisher__year_began__gte=1900,
+            story__issue__series__publisher__country=225,
+            story__issue__series__country=225,
+            story__issue__series__is_comics_publication=1,
+            story__issue__series__language=25,
+        )
+
+
+class GcdExtractedStoryCredit(models.Model):
+    created = models.DateTimeField()
+    modified = models.DateTimeField()
+    deleted = models.IntegerField()
+    is_credited = models.IntegerField()
+    is_signed = models.IntegerField()
+    uncertain = models.IntegerField()
+    signed_as = models.CharField(max_length=255)
+    credited_as = models.CharField(max_length=255)
+    credit_name = models.CharField(max_length=255)
+    creator = models.ForeignKey(GcdCreatorNameDetail, models.DO_NOTHING)
+    credit_type = models.ForeignKey(GcdCreditType, models.DO_NOTHING)
+    story = models.ForeignKey(GcdStory, models.DO_NOTHING)
+    signature = models.ForeignKey(GcdCreatorSignature, models.DO_NOTHING,
+        blank=True, null=True)
+
+    objects = ExtractedStoryCreditManager()
+
+    class Meta:
+        managed = False
+        db_table = 'm_story_credit'
 
 
 class GcdStoryFeatureLogo(models.Model):
@@ -1090,6 +1133,9 @@ class StddataDate(models.Model):
     year_uncertain = models.IntegerField()
     month_uncertain = models.IntegerField()
     day_uncertain = models.IntegerField()
+
+    def natural_key(self):
+        return str(self.pk), str(self.year), str(self.month), str(self.day)
 
     class Meta:
         managed = False
