@@ -13,14 +13,14 @@
         <property name="serverTimezone" value="UTC" />
       </driver-properties>
     </data-source>
-    <data-source source="LOCAL" name="gdbc" uuid="ac757f5b-33d6-4b0e-87c1-589f308cd200">
+    <data-source source="LOCAL" name="gcdb2@localhost" uuid="6d8b8c3c-184e-4321-95b1-0bba87f0a86f">
       <driver-ref>mysql.8</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>
-      <jdbc-url>jdbc:mysql://localhost:3306/gcdb</jdbc-url>
+      <jdbc-url>jdbc:mysql://localhost:3306/gcdb2</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
       <driver-properties>
-        <property name="serverTimezone" value="America/Los_Angeles" />
+        <property name="serverTimezone" value="US/Pacific" />
       </driver-properties>
     </data-source>
   </component>

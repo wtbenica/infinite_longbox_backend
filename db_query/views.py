@@ -141,7 +141,7 @@ def credits_by_stories(request, story_ids: str):
 def extracts_by_stories(request, story_ids: str):
     ids = [int(id) for id in story_ids.strip('[]').split(", ")]
     # TODO: add whatever model is needed for "my_credit"
-    return StandardResponse(GcdStoryCredit.objects.filter(story__in=ids))
+    return StandardResponse(GcdExtractedStoryCredit.objects.filter(story__in=ids))
 
 def name_detail_by_creator(request, creator_ids: str):
     ids = [int(id) for id in creator_ids.strip('[]').split(", ")]
