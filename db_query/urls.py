@@ -24,8 +24,6 @@ creator_urls = [
     path('creator/<int:creator_id>', views.creator, name='creator'),
     # path('creator/<int:creator_id>/stories', views.creator_stories,
     #      name='creator_series'),
-    path('creator/<str:creator_ids>/credits', views.creator_credits,
-        name='creator_credits'),
     path('creators/<str:creator_ids>/name_details',
         views.name_detail_by_creator,
         name='name_detail_by_creator'),
@@ -44,7 +42,11 @@ name_detail_urls = [
     path('name_detail/<str:name_detail_ids>/stories',
         views.stories_by_name_detail, name='stories_by_name_detail'),
     path('name_details/creator_ids/<str:creator_ids>',
-        views.name_details_by_creator, name='name_details_by_creator')
+        views.name_details_by_creator, name='name_details_by_creator'),
+    path('name_detail/<str:creator_ids>/credits', views.creator_credits,
+         name='creator_credits'),
+    path('name_detail/<str:creator_ids>/extracts', views.creator_extracts,
+         name='creator_extracts'),
 ]
 
 story_urls = [

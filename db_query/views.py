@@ -110,7 +110,14 @@ def stories_by_name_detail(request, name_detail_ids):
 
 def creator_credits(request, creator_ids: str):
     ids = [int(id) for id in creator_ids.strip('[]').split(', ')]
-    story_credits = GcdStoryCredit.objects.filter(creator__creator__in=ids)
+    story_credits = GcdStoryCredit.objects.filter(creator__in=ids)
+
+    return StandardResponse(story_credits)
+
+
+def creator_extracts(request, creator_ids: str):
+    ids = [int(id) for id in creator_ids.strip('[]').split(', ')]
+    story_credits = GcdExtractedStoryCredit.objects.filter(creator__in=ids)
 
     return StandardResponse(story_credits)
 
@@ -140,7 +147,7 @@ def credits_by_stories(request, story_ids: str):
 
 def extracts_by_stories(request, story_ids: str):
     ids = [int(id) for id in story_ids.strip('[]').split(", ")]
-    # TODO: add whatever model is needed for "my_credit"
+
     return StandardResponse(GcdExtractedStoryCredit.objects.filter(story__in=ids))
 
 def name_detail_by_creator(request, creator_ids: str):
