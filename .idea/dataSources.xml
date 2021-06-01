@@ -13,7 +13,7 @@
         <property name="serverTimezone" value="UTC" />
       </driver-properties>
     </data-source>
-    <data-source source="LOCAL" name="gcdb2@localhost" uuid="6d8b8c3c-184e-4321-95b1-0bba87f0a86f">
+    <data-source source="LOCAL" name="MySQL - gcdb2@localhost" uuid="6d8b8c3c-184e-4321-95b1-0bba87f0a86f">
       <driver-ref>mysql.8</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>

@@ -4,7 +4,7 @@ from . import views
 
 series_urls = [
     path('series_list/<int:page>', views.all_series, name='series_list'),
-    path('series/<int:series_id>', views.series_by_id, name='series'),
+    path('series/<str:series_ids>', views.series_by_ids, name='series'),
     path('series/<int:series_id>/issues', views.issues_by_series,
         name='issues'),
 ]
@@ -35,7 +35,7 @@ creator_urls = [
 ]
 
 name_detail_urls = [
-    path('name_detail/name/<str:name>', views.creator_by_name,
+    path('name_detail/name/<str:name>', views.namedetail_by_name,
         name='name_detail_by_name'),
     path('name_detail/<str:name_detail_ids>', views.name_detail_list,
         name='name_detail_list'),
@@ -43,10 +43,10 @@ name_detail_urls = [
         views.stories_by_name_detail, name='stories_by_name_detail'),
     path('name_details/creator_ids/<str:creator_ids>',
         views.name_details_by_creator, name='name_details_by_creator'),
-    path('name_detail/<str:creator_ids>/credits', views.creator_credits,
-         name='creator_credits'),
-    path('name_detail/<str:creator_ids>/extracts', views.creator_extracts,
-         name='creator_extracts'),
+    path('name_detail/<str:name_detail_ids>/credits',
+        views.credits_by_name_detail, name='creator_credits'),
+    path('name_detail/<str:name_detail_ids>/extracts',
+        views.excredits_by_name_detail, name='creator_extracts'),
 ]
 
 story_urls = [

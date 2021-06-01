@@ -559,6 +559,15 @@ class GcdIndiciaPublisher(models.Model):
         managed = False
         db_table = 'gcd_indicia_publisher'
 
+class IssueManager(models.Manager):
+    def get_queryset(self):
+        exclude_keywords = Q(series__publishing_format__contains='collected') | Q(
+            series__publishing_format__contains='trade paperback') | Q(
+            series__publishing_format__contains='portfolio')
+
+        bobo = super().get_queryset().exclude(exclude_keywords)
+
+        return bobo
 
 class GcdIssue(models.Model):
     number = models.CharField(max_length=50)
@@ -604,6 +613,8 @@ class GcdIssue(models.Model):
     no_rating = models.IntegerField()
     volume_not_printed = models.IntegerField()
     no_indicia_printer = models.IntegerField()
+
+    objects = IssueManager()
 
     class Meta:
         managed = False
@@ -972,7 +983,12 @@ class GcdStory(models.Model):
 
 class StoryCreditManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().filter(
+        exclude_keywords = Q(
+            story__issue__series__publishing_format__contains='collected') | Q(
+            story__issue__series__publishing_format__contains='trade paperback') | Q(
+            story__issue__series__publishing_format__contains='portfolio')
+
+        return super().get_queryset().exclude(exclude_keywords).filter(
             story__type__in=[6, 19],
         )
 
@@ -1002,10 +1018,14 @@ class GcdStoryCredit(models.Model):
 
 class ExtractedStoryCreditManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().filter(
+        exclude_keywords = Q(
+            story__issue__series__publishing_format__contains='collected') | Q(
+            story__issue__series__publishing_format__contains='trade paperback') | Q(
+            story__issue__series__publishing_format__contains='portfolio')
+
+        return super().get_queryset().exclude(exclude_keywords).filter(
             story__type__in=[6, 19],
         )
-
 
 class GcdExtractedStoryCredit(models.Model):
     created = models.DateTimeField()

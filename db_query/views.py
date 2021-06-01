@@ -21,8 +21,9 @@ def all_series(request, page: int):
     return StandardResponse(series_list)
 
 
-def series_by_id(request, series_id: int):
-    series = GcdSeries.objects.filter(pk=series_id)
+def series_by_ids(request, series_ids: str):
+    ids = str_to_int_list(series_ids)
+    series = GcdSeries.objects.filter(pk__in=ids)
 
     return StandardResponse(series)
 
@@ -88,10 +89,10 @@ def creators_by_issue(request, issue_id):
     return StandardResponse(creator_list)
 
 
-def creator_by_name(request, name):
-    creator = GcdCreatorNameDetail.objects.filter(name=name)
+def namedetail_by_name(request, name):
+    namedetail = GcdCreatorNameDetail.objects.filter(name=name)
 
-    return StandardResponse(creator)
+    return StandardResponse(namedetail)
 
 
 def stories_by_name_detail(request, name_detail_ids):
@@ -108,24 +109,28 @@ def stories_by_name_detail(request, name_detail_ids):
     return StandardResponse(story_list)
 
 
-def creator_credits(request, creator_ids: str):
-    ids = [int(id) for id in creator_ids.strip('[]').split(', ')]
+def credits_by_name_detail(request, name_detail_ids: str):
+    ids = [int(id) for id in name_detail_ids.strip('[]').split(', ')]
     story_credits = GcdStoryCredit.objects.filter(creator__in=ids)
 
     return StandardResponse(story_credits)
 
 
-def creator_extracts(request, creator_ids: str):
-    ids = [int(id) for id in creator_ids.strip('[]').split(', ')]
+def excredits_by_name_detail(request, name_detail_ids: str):
+    ids = [int(id) for id in name_detail_ids.strip('[]').split(', ')]
     story_credits = GcdExtractedStoryCredit.objects.filter(creator__in=ids)
 
     return StandardResponse(story_credits)
 
 
 def name_detail_list(request, name_detail_ids: str):
-    ids = [int(id) for id in name_detail_ids.strip('[]').split(", ")]
+    ids = str_to_int_list(name_detail_ids)
 
     return StandardResponse(GcdCreatorNameDetail.objects.filter(pk__in=ids))
+
+
+def str_to_int_list(ids_string):
+    return [int(id) for id in ids_string.strip('[]').split(", ")]
 
 
 def creators_list(request, creator_ids: str):
@@ -145,10 +150,13 @@ def credits_by_stories(request, story_ids: str):
 
     return StandardResponse(GcdStoryCredit.objects.filter(story__in=ids))
 
+
 def extracts_by_stories(request, story_ids: str):
     ids = [int(id) for id in story_ids.strip('[]').split(", ")]
 
-    return StandardResponse(GcdExtractedStoryCredit.objects.filter(story__in=ids))
+    return StandardResponse(
+        GcdExtractedStoryCredit.objects.filter(story__in=ids))
+
 
 def name_detail_by_creator(request, creator_ids: str):
     ids = [int(id) for id in creator_ids.strip('[]').split(", ")]
