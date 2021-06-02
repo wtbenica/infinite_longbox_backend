@@ -6,7 +6,7 @@ from django.http import HttpResponse, JsonResponse
 
 from db_query.models import *
 
-ROWS_PER_PAGE = 2000
+ROWS_PER_PAGE = 500
 UNITED_STATES = 225
 
 
@@ -19,6 +19,12 @@ def all_series(request, page: int):
     page * ROWS_PER_PAGE:(page + 1) * ROWS_PER_PAGE]
 
     return StandardResponse(series_list)
+
+def all_creators(request, page: int):
+    creators_list = GcdCreator.objects.all()[
+    page * ROWS_PER_PAGE:(page + 1) * ROWS_PER_PAGE]
+
+    return StandardResponse(creators_list)
 
 
 def series_by_ids(request, series_ids: str):

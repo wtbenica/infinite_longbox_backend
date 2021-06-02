@@ -24,6 +24,7 @@ creator_urls = [
     path('creator/<int:creator_id>', views.creator, name='creator'),
     # path('creator/<int:creator_id>/stories', views.creator_stories,
     #      name='creator_series'),
+    path('creators/all/<int:page>', views.all_creators, name='all_creators'),
     path('creators/<str:creator_ids>/name_details',
         views.name_detail_by_creator,
         name='name_detail_by_creator'),
