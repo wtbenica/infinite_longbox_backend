@@ -559,19 +559,15 @@ class GcdIndiciaPublisher(models.Model):
         managed = False
         db_table = 'gcd_indicia_publisher'
 
-
 class IssueManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().filter(
-            Q(series__publisher__issue_count__gte=850)
-            | Q(series__publisher__series_count__gte=40),
-            series__publisher__year_began__gte=1900,
-            series__publisher__country_id=225,
-            series__is_comics_publication=1,
-            series__country=225,
-            series__language=25
-        )
+        exclude_keywords = Q(series__publishing_format__contains='collected') | Q(
+            series__publishing_format__contains='trade paperback') | Q(
+            series__publishing_format__contains='portfolio')
 
+        bobo = super().get_queryset().exclude(exclude_keywords)
+
+        return bobo
 
 class GcdIssue(models.Model):
     number = models.CharField(max_length=50)
@@ -734,15 +730,6 @@ class GcdPrinter(models.Model):
         db_table = 'gcd_printer'
 
 
-class PublisherManager(models.Manager):
-    def get_queryset(self):
-        return super().get_queryset().filter(
-            Q(issue_count__gte=850) | Q(series_count__gte=40),
-            year_began__gte=1900,
-            country_id=225
-        )
-
-
 class GcdPublisher(models.Model):
     name = models.CharField(max_length=255)
     country = models.ForeignKey('StddataCountry', models.DO_NOTHING)
@@ -763,8 +750,6 @@ class GcdPublisher(models.Model):
     year_overall_began_uncertain = models.IntegerField()
     year_overall_ended = models.IntegerField(blank=True, null=True)
     year_overall_ended_uncertain = models.IntegerField()
-
-    objects = PublisherManager()
 
     class Meta:
         managed = False
@@ -851,15 +836,7 @@ class SeriesManager(models.Manager):
             publishing_format__contains='trade paperback') | Q(
             publishing_format__contains='portfolio')
 
-        bobo = super().get_queryset().exclude(exclude_keywords).filter(
-            Q(publisher__issue_count__gte=850) | Q(
-                publisher__series_count__gte=40),
-            publisher__year_began__gte=1900,
-            publisher__country_id=225,
-            is_comics_publication=1,
-            country=225,
-            language=25
-        )
+        bobo = super().get_queryset().exclude(exclude_keywords)
 
         return bobo
 
@@ -960,14 +937,7 @@ class GcdSeriesPublicationType(models.Model):
 class StoryManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().filter(
-            Q(issue__series__publisher__issue_count__gte=850) |
-            Q(issue__series__publisher__series_count__gte=40),
             type__in=[6, 19],
-            issue__series__publisher__year_began__gte=1900,
-            issue__series__publisher__country=225,
-            issue__series__country=225,
-            issue__series__is_comics_publication=1,
-            issue__series__language=25
         )
 
 
@@ -1013,15 +983,13 @@ class GcdStory(models.Model):
 
 class StoryCreditManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().filter(
-            Q(story__issue__series__publisher__issue_count__gte=850) |
-            Q(story__issue__series__publisher__series_count__gte=40),
+        exclude_keywords = Q(
+            story__issue__series__publishing_format__contains='collected') | Q(
+            story__issue__series__publishing_format__contains='trade paperback') | Q(
+            story__issue__series__publishing_format__contains='portfolio')
+
+        return super().get_queryset().exclude(exclude_keywords).filter(
             story__type__in=[6, 19],
-            story__issue__series__publisher__year_began__gte=1900,
-            story__issue__series__publisher__country=225,
-            story__issue__series__country=225,
-            story__issue__series__is_comics_publication=1,
-            story__issue__series__language=25,
         )
 
 
@@ -1050,17 +1018,14 @@ class GcdStoryCredit(models.Model):
 
 class ExtractedStoryCreditManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().filter(
-            Q(story__issue__series__publisher__issue_count__gte=850) |
-            Q(story__issue__series__publisher__series_count__gte=40),
-            story__type__in=[6, 19],
-            story__issue__series__publisher__year_began__gte=1900,
-            story__issue__series__publisher__country=225,
-            story__issue__series__country=225,
-            story__issue__series__is_comics_publication=1,
-            story__issue__series__language=25,
-        )
+        exclude_keywords = Q(
+            story__issue__series__publishing_format__contains='collected') | Q(
+            story__issue__series__publishing_format__contains='trade paperback') | Q(
+            story__issue__series__publishing_format__contains='portfolio')
 
+        return super().get_queryset().exclude(exclude_keywords).filter(
+            story__type__in=[6, 19],
+        )
 
 class GcdExtractedStoryCredit(models.Model):
     created = models.DateTimeField()

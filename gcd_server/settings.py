@@ -80,7 +80,7 @@ WSGI_APPLICATION = 'gcd_server.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'gcdb',
+        'NAME': 'gcdb2',
         'USER': USER_NAME,
         'PASSWORD': PASSWORD,
         'HOST': ADDRESS,
