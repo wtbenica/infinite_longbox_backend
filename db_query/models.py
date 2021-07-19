@@ -559,15 +559,18 @@ class GcdIndiciaPublisher(models.Model):
         managed = False
         db_table = 'gcd_indicia_publisher'
 
+
 class IssueManager(models.Manager):
     def get_queryset(self):
-        exclude_keywords = Q(series__publishing_format__contains='collected') | Q(
+        exclude_keywords = Q(
+            series__publishing_format__contains='collected') | Q(
             series__publishing_format__contains='trade paperback') | Q(
             series__publishing_format__contains='portfolio')
 
-        bobo = super().get_queryset().exclude(exclude_keywords)
+        issues = super().get_queryset().exclude(exclude_keywords)
 
-        return bobo
+        return issues
+
 
 class GcdIssue(models.Model):
     number = models.CharField(max_length=50)
@@ -576,7 +579,8 @@ class GcdIssue(models.Model):
     display_volume_with_number = models.IntegerField()
     series = models.ForeignKey('GcdSeries', models.DO_NOTHING)
     indicia_publisher = models.ForeignKey(GcdIndiciaPublisher,
-        models.DO_NOTHING, blank=True, null=True)
+        models.DO_NOTHING, blank=True,
+        null=True)
     indicia_pub_not_printed = models.IntegerField()
     brand = models.ForeignKey(GcdBrand, models.DO_NOTHING, blank=True,
         null=True)
@@ -880,7 +884,8 @@ class GcdSeries(models.Model):
     publishing_format = models.CharField(max_length=255)
     has_rating = models.IntegerField()
     publication_type = models.ForeignKey('GcdSeriesPublicationType',
-        models.DO_NOTHING, blank=True, null=True)
+        models.DO_NOTHING, blank=True,
+        null=True)
     is_singleton = models.IntegerField()
     has_about_comics = models.IntegerField()
     has_indicia_printer = models.IntegerField()
@@ -1026,6 +1031,7 @@ class ExtractedStoryCreditManager(models.Manager):
         return super().get_queryset().exclude(exclude_keywords).filter(
             story__type__in=[6, 19],
         )
+
 
 class GcdExtractedStoryCredit(models.Model):
     created = models.DateTimeField()
