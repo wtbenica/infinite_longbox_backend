@@ -20,6 +20,7 @@ def all_series(request, page: int):
 
     return StandardResponse(series_list)
 
+
 def all_creators(request, page: int):
     creators_list = GcdCreator.objects.all()[
     page * ROWS_PER_PAGE:(page + 1) * ROWS_PER_PAGE]
@@ -200,3 +201,20 @@ def name_details_by_creator(request, creator_ids):
 
     return StandardResponse(
         GcdCreatorNameDetail.objects.filter(creator__in=ids))
+
+
+def series_bond(request, series_id: int):
+    origin = GcdSeriesBond.objects.filter(origin=series_id)
+    target = GcdSeriesBond.objects.filter(target=series_id)
+    return StandardResponse(origin | target)
+
+
+def story_bond_types(request):
+    return StandardResponse(GcdSeriesBondType.objects.all())
+
+
+def issue_bond(request, issue_id: int):
+    origin = GcdSeriesBond.objects.filter(origin_issue=issue_id)
+    target = GcdSeriesBond.objects.filter(target_issue=issue_id)
+
+    return StandardResponse(origin | target)
