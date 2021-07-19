@@ -121,5 +121,8 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+# Auto-create primary key default
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 # Auto-create primary key default type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
