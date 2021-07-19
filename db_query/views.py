@@ -203,18 +203,9 @@ def name_details_by_creator(request, creator_ids):
         GcdCreatorNameDetail.objects.filter(creator__in=ids))
 
 
-def series_bond(request, series_id: int):
-    origin = GcdSeriesBond.objects.filter(origin=series_id)
-    target = GcdSeriesBond.objects.filter(target=series_id)
-    return StandardResponse(origin | target)
+def series_bonds(request):
+    return StandardResponse(GcdSeriesBond.objects.all())
 
 
-def story_bond_types(request):
+def series_bond_types(request):
     return StandardResponse(GcdSeriesBondType.objects.all())
-
-
-def issue_bond(request, issue_id: int):
-    origin = GcdSeriesBond.objects.filter(origin_issue=issue_id)
-    target = GcdSeriesBond.objects.filter(target_issue=issue_id)
-
-    return StandardResponse(origin | target)

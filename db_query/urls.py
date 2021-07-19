@@ -7,8 +7,6 @@ series_urls = [
     path('series/<str:series_ids>', views.series_by_ids, name='series'),
     path('series/<int:series_id>/issues', views.issues_by_series,
         name='issues'),
-    path('series/<int:series_id>/series_bond', views.series_bond,
-        name='series_bond'),
 ]
 
 issue_urls = [
@@ -20,8 +18,6 @@ issue_urls = [
     path('issue/<int:issue_id>/creators', views.creators_by_issue,
         name='creators'),
     path('issues/<str:issue_ids>', views.issues_by_ids, name='issues_by_ids'),
-    path('issue/<int:series_id>/issue_bond', views.issue_bond,
-        name='issue_bond')
 ]
 
 creator_urls = [
@@ -66,8 +62,10 @@ static_urls = [
     path('', views.index, name='index'),
     path('role', views.all_roles, name='role'),
     path('publisher', views.all_publishers, name='publisher'),
-    path('story_types', views.all_story_types,        name='story_types'),
-    path('story_bond_types', views.story_bond_types, name='story_bond_types')
+    path('story_types', views.all_story_types, name='story_types'),
+    path('series_bond_types', views.series_bond_types, name='Bond Types'),
+    path('series_bonds', views.series_bonds, name='Series Bonds')
 ]
 
-urlpatterns = series_urls + issue_urls + creator_urls + name_detail_urls + story_urls + static_urls
+urlpatterns = series_urls + issue_urls + creator_urls + name_detail_urls + \
+              story_urls + static_urls
