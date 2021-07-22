@@ -1165,12 +1165,26 @@ class GcdCharacter(models.Model):
         db_table = 'm_character'
 
 
+class CharacterAppearanceManager(models.Manager):
+    def get_queryset(self):
+        exclude_keywords = Q(
+                story__issue__series__publishing_format__icontains='collected') | Q(
+                story__issue__series__publishing_format__icontains='trade paperback') | Q(
+                story__issue__series__publishing_format__icontains='portfolio')
+
+        return super().get_queryset().exclude(exclude_keywords).filter(
+                story__type__in=[6, 19],
+        )
+
+
 class GcdCharacterAppearance(models.Model):
     story = models.ForeignKey('GcdStory', models.CASCADE)
     character = models.ForeignKey('GcdCharacter', models.CASCADE)
     details = models.TextField(null=True)
     membership = models.TextField(null=True)
     notes = models.TextField(null=True)
+
+    objects = CharacterAppearanceManager()
 
     class Meta:
         managed = True

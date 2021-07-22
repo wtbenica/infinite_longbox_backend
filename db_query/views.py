@@ -22,10 +22,15 @@ def all_series(request, page: int):
 
 
 def all_creators(request, page: int):
-    creators_list = GcdCreator.objects.all()[
-                    page * ROWS_PER_PAGE:(page + 1) * ROWS_PER_PAGE]
+    creators_list = GcdCreator.objects.all()[page * ROWS_PER_PAGE:(page + 1) * ROWS_PER_PAGE]
 
     return StandardResponse(creators_list)
+
+
+def all_characters(request, page: int):
+    character_list = GcdCharacter.objects.all()[page * ROWS_PER_PAGE:(page + 1) * ROWS_PER_PAGE]
+
+    return StandardResponse(character_list)
 
 
 def series_by_ids(request, series_ids: str):
@@ -144,10 +149,6 @@ def name_detail_list(request, name_detail_ids: str):
     return StandardResponse(GcdCreatorNameDetail.objects.filter(pk__in=ids))
 
 
-def str_to_int_list(ids_string):
-    return [int(id) for id in ids_string.strip('[]').split(", ")]
-
-
 def creators_list(request, creator_ids: str):
     ids = [int(id) for id in creator_ids.strip('[]').split(", ")]
 
@@ -205,18 +206,16 @@ def stories_by_name(request, name: str):
             GcdStory.objects.filter(editing__contains=name))
 
 
-class StandardResponse(JsonResponse):
-    def __init__(self, data, **kwargs):
-        super().__init__(
-                json.loads(serialize('json', data, use_natural_foreign_keys=True)),
-                safe=False,
-                json_dumps_params={'ensure_ascii': False}, **kwargs)
-
-
 def story(request, story_ids: str):
-    ids = [int(id) for id in story_ids.strip('[]').split(', ')]
+    ids = str_to_int_list(story_ids)
 
     return StandardResponse(GcdStory.objects.filter(pk__in=ids))
+
+
+def story_characters(request, story_ids: str):
+    ids = str_to_int_list(story_ids)
+
+    return StandardResponse(GcdCharacterAppearance.objects.filter(pk__in=ids))
 
 
 def name_details_by_creator(request, creator_ids):
@@ -232,3 +231,15 @@ def series_bonds(request):
 
 def series_bond_types(request):
     return StandardResponse(GcdSeriesBondType.objects.all())
+
+
+def str_to_int_list(ids_string):
+    return [int(id) for id in ids_string.strip('[]').split(", ")]
+
+
+class StandardResponse(JsonResponse):
+    def __init__(self, data, **kwargs):
+        super().__init__(
+                json.loads(serialize('json', data, use_natural_foreign_keys=True)),
+                safe=False,
+                json_dumps_params={'ensure_ascii': False}, **kwargs)

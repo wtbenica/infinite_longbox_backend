@@ -55,7 +55,8 @@ story_urls = [
         name='credits_by_stories'),
     path('stories/<str:story_ids>/extracts',
         views.extracts_by_stories, name='extracts_by_stories'),
-    path('story/<str:story_ids>', views.story, name='story')
+    path('story/<str:story_ids>', views.story, name='story'),
+    path('story/<str:story_ids>/characters', views.story_characters, name='story characters')
 ]
 
 static_urls = [
@@ -64,7 +65,8 @@ static_urls = [
     path('publisher', views.all_publishers, name='publisher'),
     path('story_types', views.all_story_types, name='story_types'),
     path('series_bond_types', views.series_bond_types, name='Bond Types'),
-    path('series_bonds', views.series_bonds, name='Series Bonds')
+    path('series_bonds', views.series_bonds, name='Series Bonds'),
+    path('characters/<int:page>', views.all_characters, name='characters')
 ]
 
 urlpatterns = series_urls + issue_urls + creator_urls + name_detail_urls + \
