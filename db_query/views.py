@@ -16,14 +16,14 @@ def index(request):
 
 def all_series(request, page: int):
     series_list = GcdSeries.objects.all()[
-    page * ROWS_PER_PAGE:(page + 1) * ROWS_PER_PAGE]
+                  page * ROWS_PER_PAGE:(page + 1) * ROWS_PER_PAGE]
 
     return StandardResponse(series_list)
 
 
 def all_creators(request, page: int):
     creators_list = GcdCreator.objects.all()[
-    page * ROWS_PER_PAGE:(page + 1) * ROWS_PER_PAGE]
+                    page * ROWS_PER_PAGE:(page + 1) * ROWS_PER_PAGE]
 
     return StandardResponse(creators_list)
 
@@ -42,7 +42,15 @@ def issue_by_id(request, issue_id: int):
 
 
 def issues_by_series(request, series_id):
-    issue_list = GcdIssue.objects.filter(series_id=series_id)
+    issue_list: RawQuerySet = GcdIssue.objects.raw(
+            """select distinct gi. *
+            from gcd_issue gi
+            where gi.series_id = %s
+            or gi.id in (
+                select gi2.variant_of_id
+                from gcd_issue gi2
+                where gi2.series_id = %s
+            );""", [series_id, series_id])
 
     return StandardResponse(issue_list)
 
@@ -85,13 +93,13 @@ def all_story_types(request):
 
 def creators_by_issue(request, issue_id):
     creator_list: RawQuerySet = GcdCreator.objects.raw(
-        """select distinct gc.* 
-        from gcd_creator gc 
-        join gcd_creator_name_detail gcnd on gc.id = gcnd.creator_id 
-        join gcd_story_credit gsc on gcnd.id = gsc.creator_id 
-        join gcd_story gs on gsc.story_id = gs.id 
-        join gcd_issue gi on gs.issue_id = gi.id
-        where gs.issue_id =  %s""", [issue_id])
+            """select distinct gc.* 
+            from gcd_creator gc 
+            join gcd_creator_name_detail gcnd on gc.id = gcnd.creator_id 
+            join gcd_story_credit gsc on gcnd.id = gsc.creator_id 
+            join gcd_story gs on gsc.story_id = gs.id 
+            join gcd_issue gi on gs.issue_id = gi.id
+            where gs.issue_id =  %s""", [issue_id])
 
     return StandardResponse(creator_list)
 
@@ -147,9 +155,24 @@ def creators_list(request, creator_ids: str):
 
 
 def issues_by_ids(request, issue_ids: str):
-    ids = [int(id) for id in issue_ids.strip('[]').split(", ")]
+    ids = str_to_int_list(issue_ids)
 
-    return StandardResponse(GcdIssue.objects.filter(pk__in=ids))
+    rawSet: RawQuerySet = GcdIssue.objects.raw(
+            """select distinct gi.*
+            from gcd_issue gi
+            where gi.id in (
+                select gi2.variant_of_id
+                from gcd_issue gi2
+                join gcd_series gs2 on gi2.series_id = gs2.id
+                where gi2.id in %s 
+            )
+            union
+            select distinct gi. *
+            from gcd_issue gi
+            where gi.id in %s
+            ;""", [ids, ids])
+
+    return StandardResponse(rawSet)
 
 
 def credits_by_stories(request, story_ids: str):
@@ -162,32 +185,32 @@ def extracts_by_stories(request, story_ids: str):
     ids = [int(id) for id in story_ids.strip('[]').split(", ")]
 
     return StandardResponse(
-        GcdExtractedStoryCredit.objects.filter(story__in=ids))
+            GcdExtractedStoryCredit.objects.filter(story__in=ids))
 
 
 def name_detail_by_creator(request, creator_ids: str):
     ids = [int(id) for id in creator_ids.strip('[]').split(", ")]
 
     return StandardResponse(
-        GcdCreatorNameDetail.objects.filter(creator__in=ids))
+            GcdCreatorNameDetail.objects.filter(creator__in=ids))
 
 
 def stories_by_name(request, name: str):
     return StandardResponse(
-        GcdStory.objects.filter(script__contains=name) |
-        GcdStory.objects.filter(pencils__contains=name) |
-        GcdStory.objects.filter(inks__contains=name) |
-        GcdStory.objects.filter(colors__contains=name) |
-        GcdStory.objects.filter(letters__contains=name) |
-        GcdStory.objects.filter(editing__contains=name))
+            GcdStory.objects.filter(script__contains=name) |
+            GcdStory.objects.filter(pencils__contains=name) |
+            GcdStory.objects.filter(inks__contains=name) |
+            GcdStory.objects.filter(colors__contains=name) |
+            GcdStory.objects.filter(letters__contains=name) |
+            GcdStory.objects.filter(editing__contains=name))
 
 
 class StandardResponse(JsonResponse):
     def __init__(self, data, **kwargs):
         super().__init__(
-            json.loads(serialize('json', data, use_natural_foreign_keys=True)),
-            safe=False,
-            json_dumps_params={'ensure_ascii': False}, **kwargs)
+                json.loads(serialize('json', data, use_natural_foreign_keys=True)),
+                safe=False,
+                json_dumps_params={'ensure_ascii': False}, **kwargs)
 
 
 def story(request, story_ids: str):
@@ -200,7 +223,7 @@ def name_details_by_creator(request, creator_ids):
     ids = [int(id) for id in creator_ids.strip('[]').split(', ')]
 
     return StandardResponse(
-        GcdCreatorNameDetail.objects.filter(creator__in=ids))
+            GcdCreatorNameDetail.objects.filter(creator__in=ids))
 
 
 def series_bonds(request):
