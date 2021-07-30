@@ -1157,12 +1157,15 @@ class StddataScript(models.Model):
 
 class GcdCharacter(models.Model):
     name = models.CharField(max_length=255)
-    alter_ego = models.TextField(null=True)
+    alter_ego = models.CharField(max_length=255, null=True)
     publisher = models.ForeignKey('GcdPublisher', models.CASCADE, null=True)
 
     class Meta:
         managed = True
         db_table = 'm_character'
+        indexes = [
+            models.Index(fields = ["name", "alter_ego"]),
+        ]
 
 
 class CharacterAppearanceManager(models.Manager):

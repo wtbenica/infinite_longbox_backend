@@ -6,8 +6,6 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
 
-    replaces = [('db_query', '0005_gcdcharacter_gcdcharacterappearance'), ('db_query', '0006_auto_20210721_0420'), ('db_query', '0007_alter_gcdcharacter_alter_ego'), ('db_query', '0008_auto_20210721_0621'), ('db_query', '0009_auto_20210722_0029'), ('db_query', '0010_auto_20210722_0105')]
-
     dependencies = [
         ('db_query', '0004_djangocontenttype_djangomigrations'),
     ]
