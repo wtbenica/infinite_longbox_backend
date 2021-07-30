@@ -6,7 +6,7 @@ from django.http import HttpResponse, JsonResponse
 
 from db_query.models import *
 
-ROWS_PER_PAGE = 500
+ROWS_PER_PAGE = 2000
 UNITED_STATES = 225
 
 
@@ -16,6 +16,47 @@ def index(request):
 
 def all_series(request, page: int):
     series_list = GcdSeries.objects.all()[
+                  page * ROWS_PER_PAGE:(page + 1) * ROWS_PER_PAGE]
+
+    return StandardResponse(series_list)
+
+def issues_list(request, page: int):
+    series_list = GcdIssue.objects.all()[
+                  page * ROWS_PER_PAGE:(page + 1) * ROWS_PER_PAGE]
+
+    return StandardResponse(series_list)
+
+
+def stories_list(request, page: int):
+    series_list = GcdStory.objects.all()[
+                  page * ROWS_PER_PAGE:(page + 1) * ROWS_PER_PAGE]
+
+    return StandardResponse(series_list)
+
+
+def credits_list(request, page: int):
+    series_list = GcdStoryCredit.objects.all()[
+                  page * ROWS_PER_PAGE:(page + 1) * ROWS_PER_PAGE]
+
+    return StandardResponse(series_list)
+
+
+def excredits_list(request, page: int):
+    series_list = GcdExtractedStoryCredit.objects.all()[
+                  page * ROWS_PER_PAGE:(page + 1) * ROWS_PER_PAGE]
+
+    return StandardResponse(series_list)
+
+
+def appearances_list(request, page: int):
+    series_list = GcdCharacterAppearance.objects.all()[
+                  page * ROWS_PER_PAGE:(page + 1) * ROWS_PER_PAGE]
+
+    return StandardResponse(series_list)
+
+
+def name_details_list(request, page: int):
+    series_list = GcdCreatorNameDetail.objects.all()[
                   page * ROWS_PER_PAGE:(page + 1) * ROWS_PER_PAGE]
 
     return StandardResponse(series_list)
@@ -143,7 +184,7 @@ def excredits_by_name_detail(request, name_detail_ids: str):
     return StandardResponse(story_credits)
 
 
-def name_detail_list(request, name_detail_ids: str):
+def name_details_by_ids(request, name_detail_ids: str):
     ids = str_to_int_list(name_detail_ids)
 
     return StandardResponse(GcdCreatorNameDetail.objects.filter(pk__in=ids))
@@ -175,6 +216,12 @@ def issues_by_ids(request, issue_ids: str):
 
     return StandardResponse(rawSet)
 
+
+def stories_by_issues(request, issue_ids: str):
+    ids = str_to_int_list(issue_ids)
+
+    return StandardResponse(GcdStory.objects.filter(issue_id__in=ids))
+    
 
 def credits_by_stories(request, story_ids: str):
     ids = [int(id) for id in story_ids.strip('[]').split(", ")]
@@ -215,8 +262,12 @@ def story(request, story_ids: str):
 def story_characters(request, story_ids: str):
     ids = str_to_int_list(story_ids)
 
-    return StandardResponse(GcdCharacterAppearance.objects.filter(pk__in=ids))
+    return StandardResponse(GcdCharacterAppearance.objects.filter(story_id__in=ids))
 
+
+def character_appearances(request, character_id: int):
+    return StandardResponse(GcdCharacterAppearance.objects.filter(character_id=character_id))
+    
 
 def name_details_by_creator(request, creator_ids):
     ids = [int(id) for id in creator_ids.strip('[]').split(', ')]
