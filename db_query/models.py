@@ -1035,6 +1035,8 @@ class GcdStoryCredit(models.Model):
     story = models.ForeignKey(GcdStory, models.DO_NOTHING)
     signature = models.ForeignKey(GcdCreatorSignature, models.DO_NOTHING,
                                   blank=True, null=True)
+    issue = models.ForeignKey(GcdIssue, models.DO_NOTHING, default=0)
+    series = models.ForeignKey(GcdSeries, models.DO_NOTHING, default=0)
 
     objects = StoryCreditManager()
 
@@ -1070,6 +1072,8 @@ class GcdExtractedStoryCredit(models.Model):
     story = models.ForeignKey(GcdStory, models.DO_NOTHING)
     signature = models.ForeignKey(GcdCreatorSignature, models.DO_NOTHING,
                                   blank=True, null=True)
+    issue = models.ForeignKey(GcdIssue, models.DO_NOTHING, default=0)
+    series = models.ForeignKey(GcdSeries, models.DO_NOTHING, default=0)
 
     objects = ExtractedStoryCreditManager()
 

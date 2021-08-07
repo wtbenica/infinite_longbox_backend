@@ -77,6 +77,7 @@ static_urls = [
     path('', views.index, name='index'),
     path('role', views.all_roles, name='role'),
     path('publisher', views.all_publishers, name='publisher'),
+    path('publisher/ids/<str:pub_ids>', views.publisher_by_id, name='publisher_by_id'), 
     path('story_types', views.all_story_types, name='story_types'),
     path('series_bond_types', views.series_bond_types, name='Bond Types'),
     path('series_bonds', views.series_bonds, name='Series Bonds'),
