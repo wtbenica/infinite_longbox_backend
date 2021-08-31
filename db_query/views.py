@@ -193,7 +193,7 @@ def name_details_by_ids(request, name_detail_ids: str):
 def publisher_by_id(request, pub_ids: str):
     ids = str_to_int_list(pub_ids)
 
-    return StandardResponse(GcdPublisher.objects.filter(pk_in=ids))
+    return StandardResponse(GcdPublisher.objects.filter(pk__in=ids))
 
 
 def creators_list(request, creator_ids: str):
@@ -274,7 +274,13 @@ def story_characters(request, story_ids: str):
 
 def character_appearances(request, character_id: int):
     return StandardResponse(GcdCharacterAppearance.objects.filter(character_id=character_id))
-    
+
+def characters_by_id(request, ids: str):
+    ids = str_to_int_list(ids)
+
+    return StandardResponse(
+            GcdCharacter.objects.filter(pk__in=ids)
+    )
 
 def name_details_by_creator(request, creator_ids):
     ids = [int(id) for id in creator_ids.strip('[]').split(', ')]
