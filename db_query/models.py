@@ -1165,7 +1165,7 @@ class GcdCharacter(models.Model):
     publisher = models.ForeignKey('GcdPublisher', models.CASCADE, null=True)
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'm_character'
         indexes = [
             models.Index(fields = ["name", "alter_ego"]),
@@ -1190,9 +1190,11 @@ class GcdCharacterAppearance(models.Model):
     details = models.TextField(null=True)
     membership = models.TextField(null=True)
     notes = models.TextField(null=True)
+    issue = models.ForeignKey('GcdIssue', models.CASCADE)
+    series = models.ForeignKey('GcdSeries', models.CASCADE)
 
     objects = CharacterAppearanceManager()
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'm_character_appearance'
