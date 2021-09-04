@@ -9,24 +9,48 @@ https://docs.djangoproject.com/en/3.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
-
+import io
+import os
 from pathlib import Path
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-from gcd_server.credentials import USER_NAME, PASSWORD, ADDRESS
+import environ
+from google.cloud import secretmanager
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Django secret config
+env = environ.Env(DEBUG=(bool, False))
+env_file = os.path.join(BASE_DIR, '.env')
+
+if os.path.isfile(env_file):
+    print('Using local env file')
+    env.read_env(env_file)
+elif os.environ.get('GOOGLE_CLOUD_PROJECT', None):
+    print('To the clouds')
+    project_id = os.environ.get('GOOGLE_CLOUD_PROJECT')
+
+    client = secretmanager.SecretManagerServiceClient()
+    settings_name = os.environ.get('SETTINGS_NAME', 'django_settings')
+    name = f'projects/{project_id}/secrets/{settings_name}/versions/latest'
+    payload = client.access_secret_version(name=name).payload.data.decode('UTF-8')
+
+    env.read_env(io.StringIO(payload))
+else:
+    raise Exception('No local .env or GOOGLE_CLOUD_PROJECT detected. No secrets found.')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '-$)4g)mw4!$cyrg$!93^7t^bx569vn@i2a^9t8s6_8arkb(#l7'
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['127.0.0.1',
+                 'localhost',
+                 'longbox.wl.r.appspot.com']
 
 # Application definition
 
@@ -55,7 +79,7 @@ ROOT_URLCONF = 'gcd_server.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates']
+        'DIRS': [os.path.join(BASE_DIR, 'templates')]
         ,
         'APP_DIRS': True,
         'OPTIONS': {
@@ -76,14 +100,17 @@ WSGI_APPLICATION = 'gcd_server.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'gcdb2',
-        'USER': USER_NAME,
-        'PASSWORD': PASSWORD,
-        'HOST': ADDRESS,
-        'PORT': '3306',
+        'ENGINE': env('ENGINE'),
+        'HOST': env('HOST'),
+        'USER': env('USER'),
+        'PASSWORD': env('PASSWORD'),
+        'NAME': env('NAME')
     }
 }
+
+if os.getenv('USE_CLOUD_SQL_AUTH_PROXY', None):
+    DATABASES['default']['HOST'] = '127.0.0.1'
+    DATABASES['default']['PORT'] = 3306
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
@@ -124,5 +151,10 @@ STATIC_URL = '/static/'
 # Auto-create primary key default
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Auto-create primary key default type
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+# Deployment security settings
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+SECURE_SSL_REDIRECT = True
+SECURE_HSTS_SECONDS = 3600
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
