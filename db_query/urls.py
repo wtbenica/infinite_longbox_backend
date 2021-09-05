@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import views, get_covers
 
 series_urls = [
     path('series_list/<int:page>', views.all_series, name='series_list'),
@@ -20,6 +20,7 @@ issue_urls = [
     path('issues/<str:issue_ids>/stories', views.stories_by_issues, name='stories_by_issues'),
     path('issues/<str:issue_ids>', views.issues_by_ids, name='issues_by_ids'),
     path('issues_list/<int:page>', views.issues_list, name='issues_list'),
+    path('issue/<int:id>/cover', get_covers.get_cover, name='issue_cover')
 ]
 
 creator_urls = [
@@ -82,7 +83,7 @@ static_urls = [
     path('series_bond_types', views.series_bond_types, name='Bond Types'),
     path('series_bonds', views.series_bonds, name='Series Bonds'),
     path('characters/<int:page>', views.all_characters, name='characters'),
-    path('appearances_list/<int:page>', views.appearances_list, name='appearances_list')
+    path('appearances_list/<int:page>', views.appearances_list, name='appearances_list'),
 ]
 
 urlpatterns = series_urls + issue_urls + creator_urls + name_detail_urls + \
