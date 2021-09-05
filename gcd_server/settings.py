@@ -23,12 +23,14 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 env = environ.Env(DEBUG=(bool, False))
 env_file = os.path.join(BASE_DIR, '.env')
 
+GC_PROJECT = os.environ.get('GOOGLE_CLOUD_PROJECT', None)
+
 if os.path.isfile(env_file):
     print('Using local env file')
     env.read_env(env_file)
-elif os.environ.get('GOOGLE_CLOUD_PROJECT', None):
+elif GC_PROJECT:
     print('To the clouds')
-    project_id = os.environ.get('GOOGLE_CLOUD_PROJECT')
+    project_id = GC_PROJECT
 
     client = secretmanager.SecretManagerServiceClient()
     settings_name = os.environ.get('SETTINGS_NAME', 'django_settings')
@@ -46,10 +48,11 @@ else:
 SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = False if GC_PROJECT else True
 
 ALLOWED_HOSTS = ['127.0.0.1',
                  'localhost',
+                 '192.168.0.141',
                  'longbox.wl.r.appspot.com']
 
 # Application definition
@@ -102,9 +105,9 @@ DATABASES = {
     'default': {
         'ENGINE': env('ENGINE'),
         'HOST': env('HOST'),
-        'USER': env('USER'),
+        'USER': env('SQL_USER'),
         'PASSWORD': env('PASSWORD'),
-        'NAME': env('NAME')
+        'NAME': env('NAME'),
     }
 }
 
@@ -152,9 +155,10 @@ STATIC_URL = '/static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Deployment security settings
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
-SECURE_SSL_REDIRECT = True
-SECURE_HSTS_SECONDS = 3600
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_HSTS_PRELOAD = True
+if GC_PROJECT:
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = True
+    SECURE_HSTS_SECONDS = 3600
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
