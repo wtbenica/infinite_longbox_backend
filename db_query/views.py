@@ -6,7 +6,7 @@ from django.http import HttpResponse, JsonResponse
 
 from db_query.models import *
 
-ROWS_PER_PAGE = 2000
+ROWS_PER_PAGE = 500
 UNITED_STATES = 225
 
 
@@ -19,6 +19,39 @@ def all_series(request, page: int):
                   page * ROWS_PER_PAGE:(page + 1) * ROWS_PER_PAGE]
 
     return StandardResponse(series_list)
+
+
+def num_series_pages(request):
+    num_pages = GcdSeries.objects.all().count() // ROWS_PER_PAGE + 1
+    return JsonResponse({'count': num_pages}, safe=False)
+
+
+def num_publisher_pages(request):
+    num_pages = GcdPublisher.objects.all().count() // ROWS_PER_PAGE + 1
+    return JsonResponse({'count': num_pages}, safe=False)
+
+
+def num_character_pages(request):
+    num_pages = GcdCharacter.objects.all().count() // ROWS_PER_PAGE + 1
+    return JsonResponse({'count': num_pages}, safe=False)
+
+
+def num_creator_pages(request):
+    num_pages = GcdCreator.objects.all().count() // ROWS_PER_PAGE + 1
+    return JsonResponse({'count': num_pages}, safe=False)
+
+
+def num_name_detail_pages(request):
+    num_pages = GcdCreatorNameDetail.objects.all().count() // ROWS_PER_PAGE + 1
+    return JsonResponse({'count': num_pages}, safe=False)
+
+
+def pubs_by_page(request, page: int):
+    pubs_list = GcdPublisher.objects.all()[
+                page * ROWS_PER_PAGE:(page + 1) * ROWS_PER_PAGE]
+
+    return StandardResponse(pubs_list)
+
 
 def issues_list(request, page: int):
     series_list = GcdIssue.objects.all()[
@@ -227,7 +260,7 @@ def stories_by_issues(request, issue_ids: str):
     ids = str_to_int_list(issue_ids)
 
     return StandardResponse(GcdStory.objects.filter(issue_id__in=ids))
-    
+
 
 def credits_by_stories(request, story_ids: str):
     ids = str_to_int_list(story_ids)
@@ -275,12 +308,14 @@ def story_characters(request, story_ids: str):
 def character_appearances(request, character_id: int):
     return StandardResponse(GcdCharacterAppearance.objects.filter(character_id=character_id))
 
+
 def characters_by_id(request, ids: str):
     ids = str_to_int_list(ids)
 
     return StandardResponse(
             GcdCharacter.objects.filter(pk__in=ids)
     )
+
 
 def name_details_by_creator(request, creator_ids):
     ids = [int(id) for id in creator_ids.strip('[]').split(', ')]
