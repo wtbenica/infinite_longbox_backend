@@ -1,6 +1,13 @@
 from django.urls import path
 
 from . import views, get_covers
+page_count_urls = [
+    path('series_page_count', views.num_series_pages, name='series_count'),
+    path('character_page_count', views.num_character_pages, name='character_count'),
+    path('creator_page_count', views.num_creator_pages, name='creator_count'),
+    path('name_detail_page_count', views.num_name_detail_pages, name='name_detail_count'),
+    path('publisher_page_count', views.num_publisher_pages, name='publisher_count'),
+]
 
 series_urls = [
     path('series_list/<int:page>', views.all_series, name='series_list'),
@@ -78,7 +85,8 @@ static_urls = [
     path('', views.index, name='index'),
     path('role', views.all_roles, name='role'),
     path('publisher', views.all_publishers, name='publisher'),
-    path('publisher/ids/<str:pub_ids>', views.publisher_by_id, name='publisher_by_id'), 
+    path('publisher_list/<int:page>', views.pubs_by_page, name='publishers_list'),
+    path('publishers/ids/<str:pub_ids>', views.publisher_by_id, name='publisher_by_id'),
     path('story_types', views.all_story_types, name='story_types'),
     path('series_bond_types', views.series_bond_types, name='Bond Types'),
     path('series_bonds', views.series_bonds, name='Series Bonds'),
@@ -86,5 +94,5 @@ static_urls = [
     path('appearances_list/<int:page>', views.appearances_list, name='appearances_list'),
 ]
 
-urlpatterns = series_urls + issue_urls + creator_urls + name_detail_urls + \
+urlpatterns = page_count_urls + series_urls + issue_urls + creator_urls + name_detail_urls + \
               story_urls + static_urls + character_urls + credits_urls

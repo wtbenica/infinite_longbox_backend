@@ -53,7 +53,7 @@ DEBUG = False if GC_PROJECT else True
 ALLOWED_HOSTS = ['127.0.0.1',
                  'localhost',
                  '192.168.0.141',
-                 'longbox.wl.r.appspot.com']
+                 'infinite-longbox.uc.r.appspot.com']
 
 # Application definition
 
