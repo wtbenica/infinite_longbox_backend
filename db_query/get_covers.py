@@ -1,3 +1,4 @@
+import os
 from typing import Optional, Union
 
 import google.auth
@@ -40,17 +41,17 @@ def get_cover(request, id: int, recurse=False) -> HttpResponse:
 
 def get_cover_from_storage(id: int) -> Optional[Blob]:
     storage_client = storage.Client()
-    bucket = storage_client.get_bucket('longbox.appspot.com')
+    bucket = storage_client.get_bucket(os.environ.get('BUCKET'))
     return bucket.get_blob(f"{id}_IMG")
 
 
 def upload_cover_to_storage(id, r) -> None:
     url_template = (
-        f'https://www.googleapis.com/upload/storage/v1/b/longbox.appspot.com/o?uploadType'
+        f'https://www.googleapis.com/upload/storage/v1/b/{os.environ.get("BUCKET")}/o?uploadType'
         f'=media'
         f'&name={id}_IMG'
     )
-    upload_url = url_template.format(bucket="longbox.appspot.com")
+    upload_url = url_template.format(bucket=os.environ.get('BUCKET'))
     upload = SimpleUpload(upload_url)
     ro_scope = 'https://www.googleapis.com/auth/devstorage.read_write'
     credentials, _ = google.auth.default(scopes=(ro_scope,))
