@@ -608,6 +608,7 @@ class IssueManager(models.Manager):
         )
 
 
+
 class GcdIssue(models.Model):
     number = models.CharField(max_length=50)
     volume = models.CharField(max_length=50)
@@ -656,8 +657,6 @@ class GcdIssue(models.Model):
     no_rating = models.IntegerField()
     volume_not_printed = models.IntegerField()
     no_indicia_printer = models.IntegerField()
-
-    objects = IssueManager()
 
     class Meta:
         managed = False
@@ -780,6 +779,7 @@ class PublisherManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().filter(
             country__in=[225, 75, 36], year_began__gte='1900'
+
         )
 
 
