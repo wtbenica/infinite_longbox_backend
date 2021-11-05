@@ -338,8 +338,9 @@ class GcdCreatorMembership(models.Model):
 class CreatorNameDetailManager(models.Manager):
     def get_queryset(self):
         cnd_ids = GcdStoryCredit.objects.all().values_list('creator')
+        ecnd_ids = GcdExtractedStoryCredit.objects.all().values('creator')
         return super().get_queryset().filter(
-            id__in=cnd_ids
+            Q(id__in=cnd_ids) | Q(id__in=ecnd_ids)
         )
 
 
@@ -600,6 +601,13 @@ class GcdIndiciaPublisher(models.Model):
         db_table = 'gcd_indicia_publisher'
 
 
+class IssueManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(
+            series__in=GcdSeries.objects.all()
+        )
+
+
 class GcdIssue(models.Model):
     number = models.CharField(max_length=50)
     volume = models.CharField(max_length=50)
@@ -648,6 +656,8 @@ class GcdIssue(models.Model):
     no_rating = models.IntegerField()
     volume_not_printed = models.IntegerField()
     no_indicia_printer = models.IntegerField()
+
+    objects = IssueManager()
 
     class Meta:
         managed = False
@@ -768,14 +778,8 @@ class GcdPrinter(models.Model):
 
 class PublisherManager(models.Manager):
     def get_queryset(self):
-        exclude_keywords = Q(publishing_format__icontains='collected') | Q(
-            publishing_format__icontains='trade paperback'
-        ) | Q(
-            publishing_format__icontains='portfolio'
-        )
-
-        return super().get_queryset().exclude(exclude_keywords).filter(
-            country__in=[225, 75, 36], year_began__gte=1900
+        return super().get_queryset().filter(
+            country__in=[225, 75, 36], year_began__gte='1900'
         )
 
 
@@ -963,35 +967,12 @@ class GcdSeries(models.Model):
 
 class SeriesBondManager(models.Manager):
     def get_queryset(self):
-        exclude_keywords = Q(
-            origin__publishing_format__icontains='collected'
-        ) | Q(
-            origin__publishing_format__icontains='trade paperback'
-        ) | Q(
-            origin__publishing_format__icontains='portfolio'
-        ) | Q(
-            target__publishing_format__icontains='collected'
-        ) | Q(
-            target__publishing_format__icontains='trade paperback'
-        ) | Q(
-            target__publishing_format__icontains='portfolio'
-        ) | Q(
-            origin_issue__series__publishing_format__icontains='collected'
-        ) | Q(
-            origin_issue__series__publishing_format__icontains='trade '
-                                                               'paperback '
-        ) | Q(
-            origin_issue__series__publishing_format__icontains='portfolio'
-        ) | Q(
-            target_issue__series__publishing_format__icontains='collected'
-        ) | Q(
-            target_issue__series__publishing_format__icontains='trade '
-                                                               'paperback '
-        ) | Q(
-            target_issue__series__publishing_format__icontains='portfolio'
+        bobo = super().get_queryset().filter(
+            target__in=GcdSeries.objects.all(),
+            origin__in=GcdSeries.objects.all(),
+            origin_issue__in=GcdIssue.objects.all(),
+            target_issue__in=GcdIssue.objects.all()
         )
-
-        bobo = super().get_queryset().exclude(exclude_keywords)
 
         return bobo
 
@@ -1048,7 +1029,7 @@ class GcdSeriesPublicationType(models.Model):
 class StoryManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().filter(
-            type__in=[6, 19],
+            type__in=[6, 19], issue__in=GcdIssue.objects.all()
         )
 
 
@@ -1095,8 +1076,7 @@ class GcdStory(models.Model):
 
 class StoryCreditManager(models.Manager):
     def get_queryset(self):
-        s_ids = GcdSeries.objects.all().values_list('id')
-        return super().get_queryset().filter(series__in=s_ids)
+        return super().get_queryset().filter(story__in=GcdStory.objects.all())
 
 
 class GcdStoryCredit(models.Model):
@@ -1127,18 +1107,7 @@ class GcdStoryCredit(models.Model):
 
 class ExtractedStoryCreditManager(models.Manager):
     def get_queryset(self):
-        exclude_keywords = Q(
-            story__issue__series__publishing_format__icontains='collected'
-        ) | Q(
-            story__issue__series__publishing_format__icontains='trade '
-                                                               'paperback '
-        ) | Q(
-            story__issue__series__publishing_format__icontains='portfolio'
-        )
-
-        return super().get_queryset().exclude(exclude_keywords).filter(
-            story__type__in=[6, 19],
-        )
+        return super().get_queryset().filter(story__in=GcdStory.objects.all())
 
 
 class GcdExtractedStoryCredit(models.Model):
@@ -1267,8 +1236,8 @@ class GcdCharacter(models.Model):
 
 class CharacterAppearanceManager(models.Manager):
     def get_queryset(self):
-        s_ids = GcdStory.objects.all().values_list('id')
-        return super().get_queryset().filter(story__in=s_ids)
+        s_ids = GcdSeries.objects.all().values_list('id')
+        return super().get_queryset().filter(series__in=s_ids)
 
 
 class GcdCharacterAppearance(models.Model):
