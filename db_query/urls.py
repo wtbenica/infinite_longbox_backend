@@ -80,7 +80,7 @@ get_by_ids_urls = [
         name='name_detail_by_ids'
     ),
     path(
-        'characters/ids/<str:char_ids>',
+        'character/ids/<str:char_ids>',
         views.characters_by_id_list,
         name='characters_by_ids'
     ),
