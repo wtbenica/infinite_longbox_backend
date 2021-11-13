@@ -4,10 +4,12 @@ from typing import Optional, Union
 import google.auth
 import google.auth.transport.requests as tr_requests
 from bs4 import BeautifulSoup, ResultSet
-from django.http import HttpResponse, HttpResponseNotFound, HttpResponseServerError
+from django.http import HttpResponse, HttpResponseNotFound, \
+    HttpResponseServerError
 from google.cloud import storage
 from google.cloud.storage.blob import Blob
 from google.resumable_media.requests import SimpleUpload
+from ratelimit import limits, sleep_and_retry
 from urllib3 import PoolManager
 from urllib3.contrib.appengine import AppEngineManager, is_appengine_sandbox
 from urllib3.response import HTTPResponse
@@ -24,7 +26,9 @@ def get_cover(request, id: int, recurse=False) -> HttpResponse:
     res = get_cover_from_storage(id)
 
     if res is not None:  # cover is in storage
-        return HttpResponse(res.download_as_bytes(), content_type=res.content_type)
+        return HttpResponse(
+            res.download_as_bytes(), content_type=res.content_type
+        )
     elif recurse:  # cover is not in storage and attempted download already
         return HttpResponseNotFound()
     else:  # cover is not in storage, see if it's available from gcd
@@ -61,6 +65,8 @@ def upload_cover_to_storage(id, r) -> None:
     upload.transmit(transport, r.data, content_type)
 
 
+@sleep_and_retry
+@limits(calls=5, period=1)
 def download_cover_from_gcd(id) -> Optional[Union[HttpResponse, HTTPResponse]]:
     URL = f"https://www.comics.org/issue/{id}/cover/4/"
     print('Getting page')
@@ -74,7 +80,8 @@ def download_cover_from_gcd(id) -> Optional[Union[HttpResponse, HTTPResponse]]:
     print(type(page.data))
     soup = BeautifulSoup(page.data, "html.parser")
     cover_image_links: ResultSet = soup.find_all("a", href=f"/issue/{id}/")
-    imgs = [a.find('img') for a in cover_image_links if a.find('img') is not None]
+    imgs = [a.find('img') for a in cover_image_links if
+        a.find('img') is not None]
     src = imgs[0]['src'] if len(imgs) > 0 else None
 
     if src is not None:

@@ -658,6 +658,8 @@ class GcdIssue(models.Model):
     volume_not_printed = models.IntegerField()
     no_indicia_printer = models.IntegerField()
 
+    objects = IssueManager()
+
     class Meta:
         managed = False
         db_table = 'gcd_issue'
@@ -1236,8 +1238,8 @@ class GcdCharacter(models.Model):
 
 class CharacterAppearanceManager(models.Manager):
     def get_queryset(self):
-        s_ids = GcdSeries.objects.all().values_list('id')
-        return super().get_queryset().filter(series__in=s_ids)
+        s_ids = GcdStory.objects.all().values_list('id')
+        return super().get_queryset().filter(story__in=s_ids)
 
 
 class GcdCharacterAppearance(models.Model):
