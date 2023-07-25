@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views, get_covers
+from . import views, get_covers_local
 
 page_count_urls = [
     path(
@@ -102,7 +102,7 @@ issue_urls = [
     ),
     # This is used, but not in Webservice.kt, so be careful before deleting
     path(
-        'issue/id/<int:id>/cover', get_covers.get_cover,
+        'issue/id/<int:id>/cover', get_covers_local.get_cover,
         name='issue_cover'
     )
 ]

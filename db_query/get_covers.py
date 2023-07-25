@@ -11,15 +11,18 @@ from google.cloud.storage.blob import Blob
 from google.resumable_media.requests import SimpleUpload
 from ratelimit import limits, sleep_and_retry
 from urllib3 import PoolManager
-from urllib3.contrib.appengine import AppEngineManager, is_appengine_sandbox
+# from urllib3.contrib.appengine import AppEngineManager, is_appengine_sandbox
 from urllib3.response import HTTPResponse
 
-global http
+# global http
 
-if is_appengine_sandbox():
-    http = AppEngineManager()
-else:
-    http = PoolManager()
+
+# if is_appengine_sandbox():
+#     http = AppEngineManager()
+# else:
+#     http = PoolManager()
+
+http = PoolManager()
 
 
 def get_cover(request, id: int, recurse=False) -> HttpResponse:
@@ -68,10 +71,10 @@ def upload_cover_to_storage(id, r) -> None:
 @sleep_and_retry
 @limits(calls=5, period=1)
 def download_cover_from_gcd(id) -> Optional[Union[HttpResponse, HTTPResponse]]:
-    URL = f"https://www.comics.org/issue/{id}/cover/4/"
+    url = f"https://www.comics.org/issue/{id}/cover/4/"
     print('Getting page')
 
-    page = resp(http.request('GET', URL, timeout=4.0))
+    page = resp(http.request('GET', url, timeout=4.0))
     print('Page was gotten')
 
     if not isinstance(page, HTTPResponse):
@@ -86,7 +89,7 @@ def download_cover_from_gcd(id) -> Optional[Union[HttpResponse, HTTPResponse]]:
 
     if src is not None:
         headers = {
-            'Referer': URL
+            'Referer': url
         }
         return resp(http.request('GET', src, headers=headers, timeout=2.0))
     else:
