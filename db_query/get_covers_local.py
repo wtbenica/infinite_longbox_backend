@@ -11,34 +11,23 @@ from google.cloud.storage.blob import Blob
 from google.resumable_media.requests import SimpleUpload
 from ratelimit import limits, sleep_and_retry
 from urllib3 import PoolManager
-# from urllib3.contrib.appengine import AppEngineManager, is_appengine_sandbox
 from urllib3.response import HTTPResponse
-
-# global http
-
-
-# if is_appengine_sandbox():
-#     http = AppEngineManager()
-# else:
-#     http = PoolManager()
 
 http = PoolManager()
 
 
 def get_cover(request, id: int, recurse=False) -> HttpResponse:
-    res = get_cover_from_storage(id)
+    cover_path = get_cover_path(id)
 
-    if res is not None:  # cover is in storage
-        return HttpResponse(
-            res.download_as_bytes(), content_type=res.content_type
-        )
-    elif recurse:  # cover is not in storage and attempted download already
+    if os.path.exists(cover_path):  # cover is stored locally
+        with open(cover_path, 'rb') as file:
+            return HttpResponse(file.read(), content_type='image/jpeg')
+    elif recurse:  # cover is not found locally and attempted download already
         return HttpResponseNotFound()
-    else:  # cover is not in storage, see if it's available from gcd
+    else:  # cover is not found locally, see if it's available from gcd
         r = download_cover_from_gcd(id)
-        print(type(r))
         if r is not None and isinstance(r, HTTPResponse) and r.status == 200:
-            upload_cover_to_storage(id, r)
+            save_cover_locally(id, r)
             return get_cover(request, id)
         elif isinstance(r, HttpResponse):
             return r
@@ -46,26 +35,22 @@ def get_cover(request, id: int, recurse=False) -> HttpResponse:
             return HttpResponseServerError()
 
 
-def get_cover_from_storage(id: int) -> Optional[Blob]:
-    storage_client = storage.Client()
-    bucket = storage_client.get_bucket(os.environ.get('BUCKET'))
-    return bucket.get_blob(f"{id}_IMG")
+def get_cover_path(id: int) -> str:
+    # Define the directory where covers will be stored locally
+    cover_directory = '/home/wesley/Pictures/covers'
+
+    # Create the directory if it doesn't exist
+    os.makedirs(cover_directory, exist_ok=True)
+
+    # Return the path of the cover file
+    return os.path.join(cover_directory, f"{id}_IMG.jpg")
 
 
-def upload_cover_to_storage(id, r) -> None:
-    url_template = (
-        f'https://www.googleapis.com/upload/storage/v1/b/{os.environ.get("BUCKET")}/o?uploadType'
-        f'=media'
-        f'&name={id}_IMG'
-    )
-    upload_url = url_template.format(bucket=os.environ.get('BUCKET'))
-    upload = SimpleUpload(upload_url)
-    ro_scope = 'https://www.googleapis.com/auth/devstorage.read_write'
-    credentials, _ = google.auth.default(scopes=(ro_scope,))
-    transport = tr_requests.AuthorizedSession(credentials)
-    content_type = r.headers['content-type']
+def save_cover_locally(id: int, r: HTTPResponse) -> None:
+    cover_path = get_cover_path(id)
 
-    upload.transmit(transport, r.data, content_type)
+    with open(cover_path, 'wb') as file:
+        file.write(r.data)
 
 
 @sleep_and_retry
@@ -84,7 +69,7 @@ def download_cover_from_gcd(id) -> Optional[Union[HttpResponse, HTTPResponse]]:
     soup = BeautifulSoup(page.data, "html.parser")
     cover_image_links: ResultSet = soup.find_all("a", href=f"/issue/{id}/")
     imgs = [a.find('img') for a in cover_image_links if
-        a.find('img') is not None]
+            a.find('img') is not None]
     src = imgs[0]['src'] if len(imgs) > 0 else None
 
     if src is not None:
