@@ -619,9 +619,7 @@ class GcdIssue(models.Model):
         GcdIndiciaPublisher, models.DO_NOTHING, blank=True, null=True
     )
     indicia_pub_not_printed = models.IntegerField()
-    brand = models.ForeignKey(
-        GcdBrand, models.DO_NOTHING, blank=True, null=True
-    )
+    # gcd_issue.brand_id was dropped upstream (now gcd_issue_brand_emblem)
     no_brand = models.IntegerField()
     publication_date = models.CharField(max_length=255)
     key_date = models.CharField(max_length=10)
@@ -656,7 +654,9 @@ class GcdIssue(models.Model):
     rating = models.CharField(max_length=255)
     no_rating = models.IntegerField()
     volume_not_printed = models.IntegerField()
-    no_indicia_printer = models.IntegerField()
+    no_indicia_printer = models.IntegerField(
+        db_column='indicia_printer_not_printed'
+    )
 
     objects = IssueManager()
 

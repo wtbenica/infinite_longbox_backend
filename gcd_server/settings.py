@@ -14,14 +14,13 @@ import os
 from pathlib import Path
 
 import environ
-from google.cloud import secretmanager
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Django secret config
 env = environ.Env(DEBUG=(bool, False))
-env_file = os.path.join(BASE_DIR, '.env')
+env_file = os.environ.get('ENV_FILE') or os.path.join(BASE_DIR, '.env')
 
 GC_PROJECT = os.environ.get('GOOGLE_CLOUD_PROJECT', None)
 
@@ -30,6 +29,7 @@ if os.path.isfile(env_file):
     env.read_env(env_file)
 elif GC_PROJECT:
     print('To the clouds')
+    from google.cloud import secretmanager
     project_id = GC_PROJECT
 
     client = secretmanager.SecretManagerServiceClient()

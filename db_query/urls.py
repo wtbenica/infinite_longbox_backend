@@ -1,6 +1,13 @@
 from django.urls import path
 
-from . import views, get_covers
+import os
+
+from . import seed, views
+
+if os.environ.get('COVERS_DIR'):
+    from . import local_covers as get_covers
+else:
+    from . import get_covers
 
 page_count_urls = [
     path(
@@ -174,6 +181,11 @@ static_urls = [
     ),
 ]
 
-urlpatterns = page_count_urls + get_by_page_urls + series_urls + issue_urls \
+seed_urls = [
+    path('seed/meta', seed.seed_meta, name='seed_meta'),
+    path('seed/db', seed.seed_db, name='seed_db'),
+]
+
+urlpatterns = seed_urls + page_count_urls + get_by_page_urls + series_urls + issue_urls \
               + story_urls + name_detail_urls + character_urls + static_urls \
               + get_by_ids_urls
