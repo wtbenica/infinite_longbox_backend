@@ -1,13 +1,6 @@
 from django.urls import path
 
-import os
-
-from . import seed, views
-
-if os.environ.get('COVERS_DIR'):
-    from . import local_covers as get_covers
-else:
-    from . import get_covers
+from . import local_covers, seed, views
 
 page_count_urls = [
     path(
@@ -109,9 +102,14 @@ issue_urls = [
     ),
     # This is used, but not in Webservice.kt, so be careful before deleting
     path(
-        'issue/id/<int:id>/cover', get_covers.get_cover,
+        'issue/id/<int:id>/cover', local_covers.get_cover,
         name='issue_cover'
-    )
+    ),
+    path(
+        'issue/id/<int:id>/cover/upload', local_covers.upload_cover,
+        name='issue_cover_upload'
+    ),
+    path('covers/have', local_covers.covers_have, name='covers_have'),
 ]
 
 story_urls = [
