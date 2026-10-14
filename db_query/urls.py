@@ -109,6 +109,10 @@ issue_urls = [
         'issue/id/<int:id>/cover/upload', local_covers.upload_cover,
         name='issue_cover_upload'
     ),
+    path(
+        'issue/id/<int:id>/cover/remove', local_covers.remove_cover,
+        name='issue_cover_remove'
+    ),
     path('covers/have', local_covers.covers_have, name='covers_have'),
 ]
 

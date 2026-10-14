@@ -2,6 +2,7 @@
 
   GET  /db_query/issue/id/<id>/cover          the cover, or 404
   POST /db_query/issue/id/<id>/cover/upload   store an image as the cover (needs ALLOW_COVER_UPLOAD=1)
+  POST /db_query/issue/id/<id>/cover/remove   delete the cover (needs ALLOW_COVER_UPLOAD=1)
   GET  /db_query/covers/have                  ids of the issues that have a cover
 
 Covers are named <issue id>.<ext> (jpg, jpeg, png, webp or gif) or <issue id>_IMG.
@@ -95,3 +96,17 @@ def upload_cover(request, id: int):
             os.remove(tmp)
     return HttpResponse(json.dumps({'id': id, 'bytes': len(request.body), 'type': ext}),
                         content_type='application/json')
+
+
+@csrf_exempt
+@require_POST
+def remove_cover(request, id: int):
+    """Deletes the issue's cover, in whatever format it is stored. Same switch as uploads."""
+    if os.environ.get('ALLOW_COVER_UPLOAD') != '1':
+        return HttpResponse('Cover changes are disabled (set ALLOW_COVER_UPLOAD=1)', status=403)
+    removed = 0
+    for ext in EXTENSIONS:
+        if os.path.isfile(_path(id, ext)):
+            os.remove(_path(id, ext))
+            removed += 1
+    return JsonResponse({'id': id, 'removed': removed})
