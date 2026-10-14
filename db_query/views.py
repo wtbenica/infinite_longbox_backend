@@ -134,6 +134,33 @@ def issues_by_id_list(request, issue_ids: str) -> JsonResponse:
     return StandardResponse(rawSet)
 
 
+def issues_by_upc(request, upc: str) -> JsonResponse:
+    """Issues whose barcode starts with the scanned UPC.
+
+    GCD stores the UPC-A followed by the 5-digit add-on (issue number, printing), sometimes
+    with a leading 0 or stray punctuation, so compare digits only and match on the prefix.
+    A scan that already includes the add-on narrows the match to that issue.
+    """
+    digits = ''.join(c for c in upc if c.isdigit())
+    if len(digits) < 8:
+        return StandardResponse(GcdIssue.objects.none())
+
+    prefixes = [digits, '0' + digits] if len(digits) == 12 else [digits]
+    clause = ' or '.join(['digits like %s'] * len(prefixes))
+    rawSet: RawQuerySet = GcdIssue.objects.raw(
+        f"""select * from (
+            select gi.*, regexp_replace(gi.barcode, '[^0-9]', '') as digits
+            from gcd_issue gi
+            where gi.barcode <> ''
+        ) t
+        where {clause}
+        order by id
+        limit 30;""", [p + '%' for p in prefixes]
+    )
+
+    return StandardResponse(rawSet)
+
+
 # Get item by id
 def get_item_by_id(issue_id: int, model: Type[models.Model]) -> JsonResponse:
     issue = model.objects.filter(pk=issue_id)

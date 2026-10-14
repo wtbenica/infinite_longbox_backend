@@ -60,6 +60,11 @@ get_by_ids_urls = [
         name='series_by_ids'
     ),
     path(
+        'issue/upc/<str:upc>',
+        views.issues_by_upc,
+        name='issues_by_upc'
+    ),
+    path(
         'issue/ids/<str:issue_ids>',
         views.issues_by_id_list,
         name='issues_by_ids'
