@@ -139,14 +139,27 @@ def issues_by_upc(request, upc: str) -> JsonResponse:
 
     GCD stores the UPC-A followed by the 5-digit add-on (issue number, printing), sometimes
     with a leading 0 or stray punctuation, so compare digits only and match on the prefix.
-    A scan that already includes the add-on narrows the match to that issue.
+    A scan that already includes the add-on narrows the match to that issue. Scanners that
+    don't read the add-on only give the base, which matches a whole series, so the result can
+    also be narrowed with ?number= (the issue number) and capped with ?limit=.
     """
     digits = ''.join(c for c in upc if c.isdigit())
     if len(digits) < 8:
         return StandardResponse(GcdIssue.objects.none())
 
-    prefixes = [digits, '0' + digits] if len(digits) == 12 else [digits]
-    clause = ' or '.join(['digits like %s'] * len(prefixes))
+    prefixes = [digits, '0' + digits] if len(digits) in (12, 17) else [digits]
+    clause = '(' + ' or '.join(['digits like %s'] * len(prefixes)) + ')'
+    params = [p + '%' for p in prefixes]
+
+    number = request.GET.get('number', '').strip()
+    if number:
+        clause += ' and number = %s'
+        params.append(number)
+
+    try:
+        limit = max(1, min(int(request.GET.get('limit', 100)), 100))
+    except ValueError:
+        limit = 100
     rawSet: RawQuerySet = GcdIssue.objects.raw(
         f"""select * from (
             select gi.*, regexp_replace(gi.barcode, '[^0-9]', '') as digits
@@ -155,7 +168,7 @@ def issues_by_upc(request, upc: str) -> JsonResponse:
         ) t
         where {clause}
         order by id
-        limit 30;""", [p + '%' for p in prefixes]
+        limit {limit};""", params
     )
 
     return StandardResponse(rawSet)
