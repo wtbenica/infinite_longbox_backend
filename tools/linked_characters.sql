@@ -304,7 +304,9 @@ WHERE lc.gcd_character_id = lc.group_id
   AND NOT EXISTS (SELECT 1
                   FROM `{{targetSchema}}`.m_character m
                   WHERE m.gcd_character_id = lc.gcd_character_id
-                    AND m.publisher_id = lc.publisher_id);
+                    AND m.publisher_id = lc.publisher_id)
+-- a fixed order, so that running this again on the same data gives the same ids
+ORDER BY lc.gcd_character_id, lc.publisher_id;
 
 -- Appearances, unless the extractor already found that character in that story. A story that links
 -- a character twice (by two names, or two records that count as one) gets one appearance, from the
@@ -337,7 +339,8 @@ WHERE NOT EXISTS (SELECT 1
                   WHERE first_link.story_id = la.story_id
                     AND first_link.group_id = la.group_id
                     AND first_link.publisher_id = la.publisher_id
-                    AND first_link.gcd_story_character_id < la.gcd_story_character_id);
+                    AND first_link.gcd_story_character_id < la.gcd_story_character_id)
+ORDER BY la.gcd_story_character_id;
 
 DROP TABLE `{{targetSchema}}`.canonical_work;
 DROP TABLE `{{targetSchema}}`.alias_work;
