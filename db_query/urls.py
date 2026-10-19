@@ -157,6 +157,14 @@ name_detail_urls = [
     ),
 ]
 
+creator_urls = [
+    path(
+        'creator/<int:creator_id>/info',
+        views.creator_info,
+        name='creator_info'
+    ),
+]
+
 character_urls = [
     path(
         'character/<int:character_id>/info',
@@ -205,5 +213,5 @@ seed_urls = [
 ]
 
 urlpatterns = seed_urls + page_count_urls + get_by_page_urls + series_urls + issue_urls \
-              + story_urls + name_detail_urls + character_urls + static_urls \
+              + story_urls + name_detail_urls + character_urls + creator_urls + static_urls \
               + get_by_ids_urls

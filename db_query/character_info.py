@@ -78,17 +78,25 @@ def _issue(row):
     }
 
 
-def _first_issue(character_id, extra=''):
+def _first_issue_row(base, where, params, latest=False):
+    """The earliest (or [latest]) regular issue with a date, among the rows [base] [where] selects.
+
+    [base] is a FROM clause with the credits or appearances as a, and the story filter on it.
+    """
     rows = _run(
-        'SELECT a.issue_id, a.series_id, s.name, i.number, i.key_date '
-        'FROM m_character_appearance a ' + STORY_JOIN +
+        'SELECT a.issue_id, a.series_id, s.name, i.number, i.key_date ' + base +
         'JOIN gcd_issue i ON i.id = a.issue_id AND i.deleted = 0 '
-        'JOIN gcd_series s ON s.id = a.series_id '
-        'WHERE a.character_id = %s ' + extra +
-        # regular issues before variants, dated before undated, then earliest
-        'ORDER BY i.variant_of_id IS NOT NULL, i.key_date IS NULL OR i.key_date = \'\', '
-        'i.key_date, i.sort_code, i.id LIMIT 1', [character_id])
-    return _issue(rows[0] if rows else None)
+        'JOIN gcd_series s ON s.id = a.series_id ' + where +
+        # regular issues before variants, dated before undated, then earliest (or latest)
+        ' ORDER BY i.variant_of_id IS NOT NULL, i.key_date IS NULL OR i.key_date = \'\', '
+        + ('i.key_date DESC, i.sort_code DESC, i.id DESC' if latest else 'i.key_date, i.sort_code, i.id')
+        + ' LIMIT 1', params)
+    return rows[0] if rows else None
+
+
+def _first_issue(character_id, extra=''):
+    return _issue(_first_issue_row(
+        'FROM m_character_appearance a ' + STORY_JOIN, 'WHERE a.character_id = %s ' + extra, [character_id]))
 
 
 def _records(gcd_id):

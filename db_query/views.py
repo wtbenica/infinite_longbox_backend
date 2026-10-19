@@ -7,7 +7,7 @@ from django.http import HttpResponse, JsonResponse
 
 from db_query.models import *
 
-from db_query import character_info as character_info_module, page_index
+from db_query import character_info as character_info_module, creator_info as creator_info_module, page_index
 from db_query.page_index import ROWS_PER_PAGE
 
 UNITED_STATES = 225
@@ -373,4 +373,11 @@ def character_info(request, character_id: int) -> JsonResponse:
     info = character_info_module.character_info(character_id)
     if info is None:
         return JsonResponse({'error': 'no such character'}, status=404)
+    return JsonResponse(info)
+
+
+def creator_info(request, creator_id: int) -> JsonResponse:
+    info = creator_info_module.creator_info(creator_id)
+    if info is None:
+        return JsonResponse({'error': 'no such creator'}, status=404)
     return JsonResponse(info)
