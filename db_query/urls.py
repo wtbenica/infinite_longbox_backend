@@ -159,6 +159,11 @@ name_detail_urls = [
 
 character_urls = [
     path(
+        'character/<int:character_id>/info',
+        views.character_info,
+        name='character_info'
+    ),
+    path(
         'character/ids/<str:character_ids>/appearances',
         views.appearances_by_character_id,
         name='character_appearances'

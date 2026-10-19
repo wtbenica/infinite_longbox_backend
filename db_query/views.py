@@ -7,7 +7,7 @@ from django.http import HttpResponse, JsonResponse
 
 from db_query.models import *
 
-from db_query import page_index
+from db_query import character_info as character_info_module, page_index
 from db_query.page_index import ROWS_PER_PAGE
 
 UNITED_STATES = 225
@@ -367,3 +367,10 @@ class StandardResponse(JsonResponse):
             safe=False,
             json_dumps_params={'ensure_ascii': False}, **kwargs
         )
+
+
+def character_info(request, character_id: int) -> JsonResponse:
+    info = character_info_module.character_info(character_id)
+    if info is None:
+        return JsonResponse({'error': 'no such character'}, status=404)
+    return JsonResponse(info)
