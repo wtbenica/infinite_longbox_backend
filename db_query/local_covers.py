@@ -42,14 +42,52 @@ def get_cover(request, id: int):
     return HttpResponseNotFound()
 
 
-def covers_have(request) -> JsonResponse:
+def issue_ids_with_covers() -> set:
+    """The ids of the issues that have a cover file here."""
     ids = set()
     if os.path.isdir(covers_dir()):
         for name in os.listdir(covers_dir()):
             match = COVER_FILE.match(name)
             if match:
                 ids.add(int(match.group(1)))
-    return JsonResponse(sorted(ids), safe=False)
+    return ids
+
+
+def covers_have(request) -> JsonResponse:
+    return JsonResponse(sorted(issue_ids_with_covers()), safe=False)
+
+
+def earliest_cover_ids(rows, per_series: int = 3) -> dict:
+    """{series id: issue ids}, from rows of (series id, issue id, variant of, sort code).
+
+    A series' issues with covers in the order a card wants them: regular issues before variants,
+    then by sort code (the issue's place in the series), at most [per_series] of them.
+    """
+    ordered = {}
+    for series_id, issue_id, variant_of, sort_code in rows:
+        ordered.setdefault(series_id, []).append((variant_of is not None, sort_code, issue_id))
+    return {
+        series_id: [issue_id for _, _, issue_id in sorted(issues)[:per_series]]
+        for series_id, issues in ordered.items()
+    }
+
+
+def series_covers(request, series_ids: str) -> JsonResponse:
+    """For each of these series, which of its issues have covers here: the earliest few.
+
+    A series card shows its first issue's cover, and falls back to the earliest cover the phone
+    has for any issue of the series; this says which issues to fetch covers for.
+    """
+    from db_query.models import GcdIssue
+
+    ids = [int(i) for i in series_ids.strip('[]').split(',') if i.strip()]
+    have = issue_ids_with_covers()
+    if not ids or not have:
+        return JsonResponse({})
+    rows = GcdIssue._base_manager.filter(series_id__in=ids, id__in=have).values_list(
+        'series_id', 'id', 'variant_of_id', 'sort_code'
+    )
+    return JsonResponse({str(k): v for k, v in earliest_cover_ids(rows).items()})
 
 
 def _image_extension(data: bytes):

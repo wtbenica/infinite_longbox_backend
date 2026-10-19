@@ -93,6 +93,11 @@ get_by_ids_urls = [
 
 series_urls = [
     path(
+        'series/covers/<str:series_ids>',
+        local_covers.series_covers,
+        name='series_covers'
+    ),
+    path(
         'series/id/<int:series_id>/issues',
         views.issues_by_series,
         name='issues'
