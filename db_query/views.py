@@ -7,7 +7,9 @@ from django.http import HttpResponse, JsonResponse
 
 from db_query.models import *
 
-ROWS_PER_PAGE = 500
+from db_query import page_index
+from db_query.page_index import ROWS_PER_PAGE
+
 UNITED_STATES = 225
 
 
@@ -16,21 +18,22 @@ def index(request) -> HttpResponse:
 
 
 # Get number of pages
-def get_num_pages(model: Type[models.Model]) -> JsonResponse:
-    num_pages = model.objects.all().count() // ROWS_PER_PAGE + 1
-    return JsonResponse({'count': num_pages}, safe=False)
+def get_num_pages(model: Type[models.Model], name: str = None) -> JsonResponse:
+    ids = page_index.ids_for(name, model) if name else None
+    count = len(ids) if ids is not None else model.objects.all().count()
+    return JsonResponse({'count': page_index.num_pages(count)}, safe=False)
 
 
 def num_series_pages(request) -> JsonResponse:
-    return get_num_pages(GcdSeries)
+    return get_num_pages(GcdSeries, 'series')
 
 
 def num_publisher_pages(request) -> JsonResponse:
-    return get_num_pages(GcdPublisher)
+    return get_num_pages(GcdPublisher, 'publisher')
 
 
 def num_character_pages(request) -> JsonResponse:
-    return get_num_pages(GcdCharacter)
+    return get_num_pages(GcdCharacter, 'character')
 
 
 def num_creator_pages(request) -> JsonResponse:
@@ -38,22 +41,27 @@ def num_creator_pages(request) -> JsonResponse:
 
 
 def num_name_detail_pages(request) -> JsonResponse:
-    return get_num_pages(GcdCreatorNameDetail)
+    return get_num_pages(GcdCreatorNameDetail, 'name_detail')
 
 
 # Get items by page
-def get_all_by_page(model: Type[models.Model], page: int) -> JsonResponse:
-    query_set = model.objects.all().order_by('id')[
-    page * ROWS_PER_PAGE:(page + 1) * ROWS_PER_PAGE]
+def get_all_by_page(model: Type[models.Model], page: int, name: str = None) -> JsonResponse:
+    ids = page_index.ids_for(name, model) if name else None
+    if ids is not None:
+        # the same rows, picked by id instead of filtering the whole table again
+        query_set = model._base_manager.filter(pk__in=page_index.page_ids(ids, page)).order_by('id')
+    else:
+        query_set = model.objects.all().order_by('id')[
+                    page * ROWS_PER_PAGE:(page + 1) * ROWS_PER_PAGE]
     return StandardResponse(query_set)
 
 
 def get_all_series_by_page(request, page: int) -> JsonResponse:
-    return get_all_by_page(GcdSeries, page)
+    return get_all_by_page(GcdSeries, page, 'series')
 
 
 def get_all_publishers_by_page(request, page: int) -> JsonResponse:
-    return get_all_by_page(GcdPublisher, page)
+    return get_all_by_page(GcdPublisher, page, 'publisher')
 
 
 def get_all_credits_by_page(request, page: int) -> JsonResponse:
@@ -69,7 +77,7 @@ def get_all_appearances_by_page(request, page: int) -> JsonResponse:
 
 
 def get_all_name_details_by_page(request, page: int) -> JsonResponse:
-    return get_all_by_page(GcdCreatorNameDetail, page)
+    return get_all_by_page(GcdCreatorNameDetail, page, 'name_detail')
 
 
 def get_all_creators_by_page(request, page: int) -> JsonResponse:
@@ -77,7 +85,7 @@ def get_all_creators_by_page(request, page: int) -> JsonResponse:
 
 
 def get_all_characters_by_page(request, page: int) -> JsonResponse:
-    return get_all_by_page(GcdCharacter, page)
+    return get_all_by_page(GcdCharacter, page, 'character')
 
 
 # Get items by id list
