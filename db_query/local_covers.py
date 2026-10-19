@@ -11,6 +11,7 @@ Nothing here touches the network: covers come from files you put there yourself,
 """
 import json
 import mimetypes
+from datetime import datetime, timezone
 import os
 import re
 import tempfile
@@ -18,7 +19,7 @@ import tempfile
 from django.conf import settings
 from django.http import FileResponse, HttpResponse, HttpResponseNotFound, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import condition, require_POST
 
 EXTENSIONS = ('jpg', 'jpeg', 'png', 'webp', 'gif', '')
 MAX_UPLOAD_BYTES = 15 * 1024 * 1024
@@ -33,13 +34,31 @@ def _path(id: int, ext: str) -> str:
     return os.path.join(covers_dir(), f'{id}.{ext}' if ext else f'{id}_IMG')
 
 
-def get_cover(request, id: int):
+def _cover_path(id: int):
     for ext in EXTENSIONS:
         path = _path(id, ext)
         if os.path.isfile(path):
-            content_type = mimetypes.guess_type(path)[0] or 'image/jpeg'
-            return FileResponse(open(path, 'rb'), content_type=content_type)
-    return HttpResponseNotFound()
+            return path
+    return None
+
+
+def _cover_modified(request, id: int):
+    """When the cover file last changed, for conditional requests (None if there is none)."""
+    path = _cover_path(id)
+    if path is None:
+        return None
+    return datetime.fromtimestamp(os.path.getmtime(path), tz=timezone.utc)
+
+
+@condition(last_modified_func=_cover_modified)
+def get_cover(request, id: int):
+    """The cover. With If-Modified-Since the answer is 304 and no image if it has not changed, so
+    the phone can check its copy without downloading it again."""
+    path = _cover_path(id)
+    if path is None:
+        return HttpResponseNotFound()
+    content_type = mimetypes.guess_type(path)[0] or 'image/jpeg'
+    return FileResponse(open(path, 'rb'), content_type=content_type)
 
 
 def issue_ids_with_covers() -> set:
