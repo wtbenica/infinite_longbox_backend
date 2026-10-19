@@ -44,6 +44,15 @@ def num_name_detail_pages(request) -> JsonResponse:
     return get_num_pages(GcdCreatorNameDetail, 'name_detail')
 
 
+def manifest(request) -> JsonResponse:
+    """A fingerprint of every page of each paged model, so a phone can fetch only the pages that
+    changed since it last synced. A model with no current index is left out."""
+    return JsonResponse(page_index.manifest({
+        'publisher': GcdPublisher, 'series': GcdSeries,
+        'name_detail': GcdCreatorNameDetail, 'character': GcdCharacter,
+    }))
+
+
 # Get items by page
 def get_all_by_page(model: Type[models.Model], page: int, name: str = None) -> JsonResponse:
     ids = page_index.ids_for(name, model) if name else None

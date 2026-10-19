@@ -10,6 +10,7 @@ The index only counts while the table it was made from has the same number of ro
 missing or out of date (the data changed and the index was not made again) the endpoints fall
 back to asking the database, slowly but correctly.
 """
+import hashlib
 import json
 import os
 import time
@@ -30,16 +31,27 @@ def index_path() -> str:
     )
 
 
+def hash_page(rows) -> str:
+    """A fingerprint of a page's rows: it changes when any of them does."""
+    return hashlib.sha1(repr(list(rows)).encode()).hexdigest()[:12]
+
+
 def make(models: dict) -> dict:
-    """The index for {name: model}: the ids the model's endpoints list, in order, and the number
-    of rows in its table, which says whether the index still fits."""
-    return {
-        name: {
-            'rows': model._base_manager.count(),
-            'ids': list(model.objects.order_by('pk').values_list('pk', flat=True)),
-        }
-        for name, model in models.items()
-    }
+    """The index for {name: model}: the ids the model's endpoints list, in order, the number of
+    rows in its table, which says whether the index still fits, and a fingerprint of each page.
+
+    The fingerprints are the manifest: a phone that has the pages as of one version asks which
+    changed in the next and fetches only those."""
+    index = {}
+    for name, model in models.items():
+        ids = list(model.objects.order_by('pk').values_list('pk', flat=True))
+        hashes = []
+        for page in range(num_pages(len(ids))):
+            chunk = page_ids(ids, page)
+            rows = model._base_manager.filter(pk__in=chunk).order_by('pk').values_list() if chunk else []
+            hashes.append(hash_page(rows))
+        index[name] = {'rows': model._base_manager.count(), 'ids': ids, 'hashes': hashes}
+    return index
 
 
 def write(index: dict, directory: str) -> None:
@@ -71,6 +83,17 @@ def _data() -> Optional[dict]:
             _loaded.update(mtime=mtime, data=json.load(f))
         _checked.clear()
     return _loaded['data']
+
+
+def manifest(models: dict) -> dict:
+    """{name: {"pages": n, "hashes": [...]}} for each model whose index still fits its table."""
+    out = {}
+    data = _data() or {}
+    for name, model in models.items():
+        ids = ids_for(name, model)
+        if ids is not None and 'hashes' in data[name]:
+            out[name] = {'pages': len(data[name]['hashes']), 'hashes': data[name]['hashes']}
+    return out
 
 
 def ids_for(name: str, model) -> Optional[list]:

@@ -41,6 +41,25 @@ class Paging(unittest.TestCase):
         self.assertEqual(page_index.page_ids([], 0), [])
 
 
+class Hashes(unittest.TestCase):
+    def test_the_same_rows_give_the_same_fingerprint(self):
+        rows = [(1, 'Doom Patrol', None), (2, 'Saga', 'x')]
+        self.assertEqual(page_index.hash_page(rows), page_index.hash_page(list(rows)))
+        self.assertEqual(len(page_index.hash_page(rows)), 12)
+
+    def test_any_changed_value_changes_it(self):
+        base = [(1, 'Doom Patrol', None), (2, 'Saga', 'x')]
+        self.assertNotEqual(page_index.hash_page(base), page_index.hash_page([(1, 'Doom Patrol', None), (2, 'Saga', 'y')]))
+
+    def test_a_missing_or_extra_row_changes_it(self):
+        base = [(1, 'a'), (2, 'b')]
+        self.assertNotEqual(page_index.hash_page(base), page_index.hash_page(base[:1]))
+        self.assertNotEqual(page_index.hash_page(base), page_index.hash_page(base + [(3, 'c')]))
+
+    def test_an_empty_page_has_a_fingerprint_too(self):
+        self.assertEqual(len(page_index.hash_page([])), 12)
+
+
 class Index(unittest.TestCase):
     def setUp(self):
         self.dir = tempfile.mkdtemp()
@@ -86,6 +105,18 @@ class Index(unittest.TestCase):
         for _ in range(5):
             page_index.ids_for('character', model)
         self.assertEqual(len(calls), 1)
+
+    def test_the_manifest_has_the_pages_and_fingerprints_of_models_whose_index_fits(self):
+        page_index.write({
+            'character': {'rows': 5, 'ids': [1, 2, 3], 'hashes': ['aaa', 'bbb']},
+            'series': {'rows': 9, 'ids': [1], 'hashes': ['ccc']},
+        }, self.dir)
+        out = page_index.manifest({'character': FakeModel(5), 'series': FakeModel(8)})
+        # series no longer fits its table, so it is left out
+        self.assertEqual(out, {'character': {'pages': 2, 'hashes': ['aaa', 'bbb']}})
+
+    def test_no_index_no_manifest(self):
+        self.assertEqual(page_index.manifest({'character': FakeModel(5)}), {})
 
     def test_writing_leaves_no_half_written_file(self):
         self.write([1], rows=1)

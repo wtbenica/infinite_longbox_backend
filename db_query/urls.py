@@ -194,6 +194,7 @@ static_urls = [
 ]
 
 seed_urls = [
+    path('manifest', views.manifest, name='manifest'),
     path('seed/meta', seed.seed_meta, name='seed_meta'),
     path('seed/db', seed.seed_db, name='seed_db'),
 ]

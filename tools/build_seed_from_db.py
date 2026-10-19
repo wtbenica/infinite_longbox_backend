@@ -270,10 +270,12 @@ def write_page_index(directory):
     filter and count its tables each time (see db_query/page_index.py)."""
     from db_query import page_index
     from db_query.models import GcdCharacter, GcdCreatorNameDetail, GcdPublisher, GcdSeries
-    page_index.write(page_index.make({
+    index = page_index.make({
         'publisher': GcdPublisher, 'series': GcdSeries,
         'name_detail': GcdCreatorNameDetail, 'character': GcdCharacter,
-    }), directory)
+    })
+    page_index.write(index, directory)
+    return index
 
 
 def main():
@@ -288,17 +290,26 @@ def main():
     db_path = os.path.join(work, 'issue-database')
     identity, version, counts, pages, fingerprint = build(db_path, a.date)
 
-    # sync-progress markers, as the phone would have after a full sync today
+    index = write_page_index(a.out)
+
+    # sync-progress markers, as the phone would have after a full sync today; the fingerprints say
+    # which version of each page it has, so the weekly refresh fetches only pages that changed
+    def hashes(name):
+        return ','.join(index[name]['hashes'])
+
     prefs = {
         'updated_publishers': a.date, 'updated_publishers_page': 't' * pages['publishers'],
         'updated_series': a.date, 'updated_series_page': 't' * pages['series'],
         'update_name_details': a.date, 'update_name_details_page': 't' * pages['name_details'],
         'update_characters': a.date, 'update_characters_page': 't' * pages['characters'],
         'update_series_bonds': a.date,
+        'updated_publishers_page_hashes': hashes('publisher'),
+        'updated_series_page_hashes': hashes('series'),
+        'update_name_details_page_hashes': hashes('name_detail'),
+        'update_characters_page_hashes': hashes('character'),
     }
 
     os.makedirs(a.out, exist_ok=True)
-    write_page_index(a.out)
     gz_path = os.path.join(a.out, 'seed.db.gz')
     with open(db_path, 'rb') as src, gzip.GzipFile(gz_path, 'wb', compresslevel=9, mtime=0) as dst:
         for chunk in iter(lambda: src.read(1 << 20), b''):
