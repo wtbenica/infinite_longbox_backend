@@ -1224,7 +1224,8 @@ class CharacterManager(models.Manager):
 class GcdCharacter(models.Model):
     name = models.CharField(max_length=255)
     alter_ego = models.CharField(max_length=255, null=True)
-    publisher = models.ForeignKey('GcdPublisher', models.CASCADE, null=True)
+    # Every character has a publisher: CreditUpdater sets it from the series, and the app requires it
+    publisher = models.ForeignKey('GcdPublisher', models.CASCADE)
 
     objects = CharacterManager()
 
