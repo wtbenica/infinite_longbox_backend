@@ -50,7 +50,7 @@ get_by_page_urls = [
 
 get_by_ids_urls = [
     path(
-        'publishers/ids/<str:pub_ids>',
+        'publisher/ids/<str:pub_ids>',
         views.publishers_by_id_list,
         name='publisher_by_ids'
     ),
