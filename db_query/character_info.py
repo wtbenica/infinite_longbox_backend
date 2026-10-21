@@ -228,6 +228,7 @@ def character_info(character_id):
         'origin': _first_issue(character_id, "AND a.details LIKE '%%origin%%' "),
         'death': _first_issue(character_id, "AND a.details LIKE '%%death%%' "),
         'linked': gcd_id is not None,
+        'gcdId': gcd_id,
         'description': '',
         'firstYear': None,
         'alternateNames': [],
