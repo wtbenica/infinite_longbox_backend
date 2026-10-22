@@ -180,13 +180,15 @@ def fetch_cover(request, id: int):
     """Fetches the issue's cover from Metron and stores it, replacing any existing one.
 
     200 {"id", "type"} when saved; 403 when fetching is off; 404 when Metron has no cover for the
-    issue; 502 when Metron could not be reached or gave something that is not an image.
+    issue; 429 when Metron's rate limit means trying again shortly; 502 when Metron could not be reached or gave something that is not an image.
     """
     if not metron_covers.enabled():
         return HttpResponse('Fetching covers is off (set FETCH_COVERS=1 and METRON_TOKEN)', status=403)
     result = metron_covers.fetch(id, covers_dir(), _image_extension)
     if result is metron_covers.NO_COVER:
         return HttpResponseNotFound('Metron has no cover for this issue')
+    if result is metron_covers.RATE_LIMITED:
+        return HttpResponse('Metron is busy, try again shortly', status=429)
     if result is None:
         return HttpResponse('Could not get the cover from Metron', status=502)
     return JsonResponse({'id': id, 'type': os.path.splitext(result)[1].lstrip('.')})

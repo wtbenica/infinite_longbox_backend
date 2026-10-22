@@ -39,6 +39,14 @@ class MetronCoversTest(SimpleTestCase):
         path, _ = self.fetch([api_answer(None)])
         self.assertIs(path, metron_covers.NO_COVER)
 
+    def test_a_rate_limit_is_reported(self):
+        path, _ = self.fetch([metron_covers.RateLimited(), metron_covers.RateLimited()])
+        self.assertIs(path, metron_covers.RATE_LIMITED)
+
+    def test_a_rate_limit_is_tried_once_more(self):
+        path, _ = self.fetch([metron_covers.RateLimited(), api_answer('https://static.metron.cloud/a.jpg'), JPEG])
+        self.assertEqual(os.path.basename(path), '7.jpg')
+
     def test_a_failed_request_gives_nothing(self):
         self.assertIsNone(self.fetch([OSError('offline')])[0])
 
@@ -79,6 +87,9 @@ class FetchCoverViewTest(SimpleTestCase):
 
     def test_none_on_metron(self):
         self.assertEqual(self.post(metron_covers.NO_COVER).status_code, 404)
+
+    def test_rate_limited(self):
+        self.assertEqual(self.post(metron_covers.RATE_LIMITED).status_code, 429)
 
     def test_could_not_get_it(self):
         self.assertEqual(self.post(None).status_code, 502)
