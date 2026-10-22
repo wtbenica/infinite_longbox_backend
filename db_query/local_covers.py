@@ -6,8 +6,9 @@
   GET  /db_query/covers/have                  ids of the issues that have a cover
 
 Covers are named <issue id>.<ext> (jpg, jpeg, png, webp or gif) or <issue id>_IMG.
-Nothing here touches the network: covers come from files you put there yourself, or from the app's
-"pick a cover" / "upload covers to server" features.
+Covers come from files you put there yourself, from the app's "pick a cover" / "upload covers to
+server" features, or, when FETCH_COVERS=1 and METRON_TOKEN are set, from Metron the first time an
+issue's cover is asked for and the server has none (see metron_covers.py).
 """
 import json
 import mimetypes
@@ -20,6 +21,8 @@ from django.conf import settings
 from django.http import FileResponse, HttpResponse, HttpResponseNotFound, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import condition, require_POST
+
+from . import metron_covers
 
 EXTENSIONS = ('jpg', 'jpeg', 'png', 'webp', 'gif', '')
 MAX_UPLOAD_BYTES = 15 * 1024 * 1024
@@ -54,7 +57,7 @@ def _cover_modified(request, id: int):
 def get_cover(request, id: int):
     """The cover. With If-Modified-Since the answer is 304 and no image if it has not changed, so
     the phone can check its copy without downloading it again."""
-    path = _cover_path(id)
+    path = _cover_path(id) or metron_covers.fetch(id, covers_dir(), _image_extension)
     if path is None:
         return HttpResponseNotFound()
     content_type = mimetypes.guess_type(path)[0] or 'image/jpeg'
