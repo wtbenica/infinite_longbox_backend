@@ -3,12 +3,14 @@
   GET  /db_query/issue/id/<id>/cover          the cover, or 404
   POST /db_query/issue/id/<id>/cover/upload   store an image as the cover (needs ALLOW_COVER_UPLOAD=1)
   POST /db_query/issue/id/<id>/cover/remove   delete the cover (needs ALLOW_COVER_UPLOAD=1)
+  POST /db_query/issue/id/<id>/cover/fetch    fetch the cover from Metron (needs FETCH_COVERS=1)
   GET  /db_query/covers/have                  ids of the issues that have a cover
 
 Covers are named <issue id>.<ext> (jpg, jpeg, png, webp or gif) or <issue id>_IMG.
 Covers come from files you put there yourself, from the app's "pick a cover" / "upload covers to
-server" features, or, when FETCH_COVERS=1 and METRON_TOKEN are set, from Metron the first time an
-issue's cover is asked for and the server has none (see metron_covers.py).
+server" features, or, when FETCH_COVERS=1 and METRON_TOKEN are set, from Metron when the app asks
+for it (POST /db_query/issue/id/<id>/cover/fetch; see metron_covers.py). Asking for a cover never
+fetches one.
 """
 import json
 import mimetypes
@@ -57,7 +59,7 @@ def _cover_modified(request, id: int):
 def get_cover(request, id: int):
     """The cover. With If-Modified-Since the answer is 304 and no image if it has not changed, so
     the phone can check its copy without downloading it again."""
-    path = _cover_path(id) or metron_covers.fetch(id, covers_dir(), _image_extension)
+    path = _cover_path(id)
     if path is None:
         return HttpResponseNotFound()
     content_type = mimetypes.guess_type(path)[0] or 'image/jpeg'
@@ -170,3 +172,21 @@ def remove_cover(request, id: int):
             os.remove(_path(id, ext))
             removed += 1
     return JsonResponse({'id': id, 'removed': removed})
+
+
+@csrf_exempt
+@require_POST
+def fetch_cover(request, id: int):
+    """Fetches the issue's cover from Metron and stores it, replacing any existing one.
+
+    200 {"id", "type"} when saved; 403 when fetching is off; 404 when Metron has no cover for the
+    issue; 502 when Metron could not be reached or gave something that is not an image.
+    """
+    if not metron_covers.enabled():
+        return HttpResponse('Fetching covers is off (set FETCH_COVERS=1 and METRON_TOKEN)', status=403)
+    result = metron_covers.fetch(id, covers_dir(), _image_extension)
+    if result is metron_covers.NO_COVER:
+        return HttpResponseNotFound('Metron has no cover for this issue')
+    if result is None:
+        return HttpResponse('Could not get the cover from Metron', status=502)
+    return JsonResponse({'id': id, 'type': os.path.splitext(result)[1].lstrip('.')})

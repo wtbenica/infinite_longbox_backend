@@ -123,6 +123,10 @@ issue_urls = [
         'issue/id/<int:id>/cover/remove', local_covers.remove_cover,
         name='issue_cover_remove'
     ),
+    path(
+        'issue/id/<int:id>/cover/fetch', local_covers.fetch_cover,
+        name='issue_cover_fetch'
+    ),
     path('covers/have', local_covers.covers_have, name='covers_have'),
 ]
 
