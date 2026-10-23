@@ -157,13 +157,20 @@ def preview(gcd_id: int, choice: str):
             return None
 
 
+def only_variant(covers: list):
+    """The one variant Metron has, when it has exactly one (the standard cover aside), else None."""
+    variants = [c for c in covers if c.name]
+    return variants[0] if len(variants) == 1 else None
+
+
 def fetch(issue_id: int, covers_dir: str, image_extension, parent: int | None = None,
-          name: str | None = None, choice: str | None = None):
+          name: str | None = None, choice: str | None = None, sole_variant: bool = False):
     """Gets the issue's cover from Metron and saves it (replacing any other format of it).
 
     For a variant issue, [parent] is the GCD id of the issue it is a variant of, and the cover is
     the variant of that issue Metron names [name], or the one picked ([choice], from candidates()).
-    A plain issue gets Metron's standard cover.
+    If neither fits and [sole_variant] says the GCD knows just one variant of the parent, that is
+    this issue, so the one variant Metron has is it. A plain issue gets Metron's standard cover.
 
     Returns the file's path, NO_COVER if Metron has none (or no variant that clearly fits),
     RATE_LIMITED if its limit means trying again shortly, or None if it could not be got (off,
@@ -183,8 +190,10 @@ def fetch(issue_id: int, covers_dir: str, image_extension, parent: int | None = 
                     return None
             else:
                 covers = candidates(parent or issue_id)
-                picked = (next((c for c in covers if c.id == choice), None) if choice
-                          else match_variant(name, covers))
+                if choice:
+                    picked = next((c for c in covers if c.id == choice), None)
+                else:
+                    picked = match_variant(name, covers) or (only_variant(covers) if sole_variant else None)
                 image = picked.image if picked else None
             if image is None:
                 return NO_COVER

@@ -188,11 +188,13 @@ def fetch_cover(request, id: int):
     if not metron_covers.enabled():
         return HttpResponse('Fetching covers is off (set FETCH_COVERS=1 and METRON_TOKEN)', status=403)
     parent = request.GET.get('parent')
+    parent = int(parent) if parent and parent.isdigit() else None
     result = metron_covers.fetch(
         id, covers_dir(), _image_extension,
-        parent=int(parent) if parent and parent.isdigit() else None,
+        parent=parent,
         name=request.GET.get('name'),
         choice=request.GET.get('choice'),
+        sole_variant=parent is not None and _variants_of(parent) == 1,
     )
     if result is metron_covers.NO_COVER:
         return HttpResponseNotFound('Metron has no cover for this issue')
@@ -203,6 +205,12 @@ def fetch_cover(request, id: int):
     return JsonResponse({'id': id, 'type': os.path.splitext(result)[1].lstrip('.')})
 
 
+def _variants_of(parent: int) -> int:
+    """How many variants of the issue the GCD knows."""
+    from .models import GcdIssue
+    return GcdIssue.objects.filter(variant_of=parent).count()
+
+
 def _lookup_id(request, id: int) -> int:
     parent = request.GET.get('parent')
     return int(parent) if parent and parent.isdigit() else id
@@ -210,7 +218,8 @@ def _lookup_id(request, id: int) -> int:
 
 def metron_options(request, id: int):
     """The covers Metron has for the issue (or, with ?parent=, for the issue it is a variant of):
-    [{"id", "name"}], the standard cover first (empty name), for the app to pick from."""
+    [{"id", "name"}], the standard cover first (empty name), for the app to pick from. For a variant (?parent=) the
+    standard cover is left out."""
     if not metron_covers.enabled():
         return HttpResponse('Fetching covers is off (set FETCH_COVERS=1 and METRON_TOKEN)', status=403)
     try:
@@ -220,6 +229,8 @@ def metron_options(request, id: int):
         return HttpResponse('Metron is busy, try again shortly', status=429)
     except (OSError, ValueError):
         return HttpResponse('Could not get the covers from Metron', status=502)
+    if request.GET.get('parent'):
+        covers = [c for c in covers if c.name]  # a variant is not the standard cover
     return JsonResponse([c.as_dict() for c in covers], safe=False)
 
 

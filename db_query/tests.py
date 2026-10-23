@@ -95,6 +95,19 @@ class MetronVariantsTest(MetronCoversTest):
         metron_covers._candidates_cache.clear()
         self.assertIs(self.fetch(issue_answers('Foil Cover', 'Foil Variant'), parent=5, name='Foil')[0], metron_covers.NO_COVER)
 
+    def test_the_only_variant_is_it_when_the_gcd_knows_only_one(self):
+        path, get = self.fetch(issue_answers('Variant Cover') + [JPEG], parent=5, name='Tim Sale Cover', sole_variant=True)
+        self.assertEqual(get.call_args_list[-1].args[0], 'https://static.metron.cloud/0.jpg')
+        self.assertIsNotNone(path)
+
+    def test_one_metron_variant_is_not_guessed_when_the_gcd_has_more(self):
+        path, _ = self.fetch(issue_answers('Variant Cover'), parent=5, name='Tim Sale Cover', sole_variant=False)
+        self.assertIs(path, metron_covers.NO_COVER)
+
+    def test_two_metron_variants_are_not_guessed_either(self):
+        path, _ = self.fetch(issue_answers('A', 'B'), parent=5, name='Tim Sale Cover', sole_variant=True)
+        self.assertIs(path, metron_covers.NO_COVER)
+
     def test_a_picked_cover_is_the_one_saved(self):
         with mock.patch.object(metron_covers, '_get', side_effect=issue_answers('A', 'B')):
             choice = metron_covers.candidates(5)[2].id
