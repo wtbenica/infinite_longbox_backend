@@ -127,6 +127,14 @@ issue_urls = [
         'issue/id/<int:id>/cover/fetch', local_covers.fetch_cover,
         name='issue_cover_fetch'
     ),
+    path(
+        'issue/id/<int:id>/cover/metron/options', local_covers.metron_options,
+        name='issue_cover_metron_options'
+    ),
+    path(
+        'issue/id/<int:id>/cover/metron/preview/<str:choice>', local_covers.metron_preview,
+        name='issue_cover_metron_preview'
+    ),
     path('covers/have', local_covers.covers_have, name='covers_have'),
 ]
 

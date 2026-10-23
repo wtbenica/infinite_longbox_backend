@@ -16,15 +16,16 @@ def api_answer(image):
 
 class MetronCoversTest(SimpleTestCase):
     def setUp(self):
+        metron_covers._candidates_cache.clear()
         self.dir = tempfile.TemporaryDirectory()
         self.addCleanup(self.dir.cleanup)
         patcher = mock.patch.dict(os.environ, {'FETCH_COVERS': '1', 'METRON_TOKEN': 't'})
         patcher.start()
         self.addCleanup(patcher.stop)
 
-    def fetch(self, answers):
+    def fetch(self, answers, **kwargs):
         with mock.patch.object(metron_covers, '_get', side_effect=answers) as get:
-            path = metron_covers.fetch(7, self.dir.name, local_covers._image_extension)
+            path = metron_covers.fetch(7, self.dir.name, local_covers._image_extension, **kwargs)
         return path, get
 
     def test_saves_the_cover_the_lookup_points_to(self):
@@ -65,6 +66,41 @@ class MetronCoversTest(SimpleTestCase):
             path, get = self.fetch([])
         self.assertIsNone(path)
         get.assert_not_called()
+
+
+def issue_answers(*variants):
+    """What Metron answers for a lookup by GCD id and then for the issue itself."""
+    base = 'https://static.metron.cloud/base.jpg'
+    return [
+        json.dumps({'results': [{'id': 99, 'image': base}]}).encode(),
+        json.dumps({'id': 99, 'image': base, 'variants': [
+            {'name': n, 'image': f'https://static.metron.cloud/{i}.jpg'} for i, n in enumerate(variants)
+        ]}).encode(),
+    ]
+
+
+class MetronVariantsTest(MetronCoversTest):
+    def test_the_candidates_are_the_standard_cover_then_the_variants(self):
+        with mock.patch.object(metron_covers, '_get', side_effect=issue_answers('Second Printing Cover', 'Variant Cover')):
+            covers = metron_covers.candidates(5)
+        self.assertEqual([c.name for c in covers], [None, 'Second Printing Cover', 'Variant Cover'])
+
+    def test_a_variant_is_matched_by_name(self):
+        path, get = self.fetch(issue_answers('Variant Cover', 'Second Printing Cover') + [JPEG], parent=5, name='Second Printing')
+        self.assertEqual(os.path.basename(path), '7.jpg')
+        self.assertEqual(get.call_args_list[-1].args[0], 'https://static.metron.cloud/1.jpg')
+
+    def test_generic_and_ambiguous_names_do_not_match(self):
+        self.assertIs(self.fetch(issue_answers('Variant Cover'), parent=5, name='Tim Sale Cover')[0], metron_covers.NO_COVER)
+        metron_covers._candidates_cache.clear()
+        self.assertIs(self.fetch(issue_answers('Foil Cover', 'Foil Variant'), parent=5, name='Foil')[0], metron_covers.NO_COVER)
+
+    def test_a_picked_cover_is_the_one_saved(self):
+        with mock.patch.object(metron_covers, '_get', side_effect=issue_answers('A', 'B')):
+            choice = metron_covers.candidates(5)[2].id
+        path, get = self.fetch([JPEG], parent=5, choice=choice)
+        self.assertIsNotNone(path)
+        self.assertEqual(get.call_args_list[-1].args[0], 'https://static.metron.cloud/1.jpg')
 
 
 class FetchCoverViewTest(SimpleTestCase):

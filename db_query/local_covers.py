@@ -3,7 +3,10 @@
   GET  /db_query/issue/id/<id>/cover          the cover, or 404
   POST /db_query/issue/id/<id>/cover/upload   store an image as the cover (needs ALLOW_COVER_UPLOAD=1)
   POST /db_query/issue/id/<id>/cover/remove   delete the cover (needs ALLOW_COVER_UPLOAD=1)
-  POST /db_query/issue/id/<id>/cover/fetch    fetch the cover from Metron (needs FETCH_COVERS=1)
+  POST /db_query/issue/id/<id>/cover/fetch    fetch the cover from Metron (needs FETCH_COVERS=1);
+       for a variant: ?parent=<issue it varies>&name=<its variant name> or &choice=<id from options>
+  GET  /db_query/issue/id/<id>/cover/metron/options   the covers Metron has for the issue (?parent=)
+  GET  /db_query/issue/id/<id>/cover/metron/preview/<choice>   one of them, as an image
   GET  /db_query/covers/have                  ids of the issues that have a cover
 
 Covers are named <issue id>.<ext> (jpg, jpeg, png, webp or gif) or <issue id>_IMG.
@@ -184,7 +187,13 @@ def fetch_cover(request, id: int):
     """
     if not metron_covers.enabled():
         return HttpResponse('Fetching covers is off (set FETCH_COVERS=1 and METRON_TOKEN)', status=403)
-    result = metron_covers.fetch(id, covers_dir(), _image_extension)
+    parent = request.GET.get('parent')
+    result = metron_covers.fetch(
+        id, covers_dir(), _image_extension,
+        parent=int(parent) if parent and parent.isdigit() else None,
+        name=request.GET.get('name'),
+        choice=request.GET.get('choice'),
+    )
     if result is metron_covers.NO_COVER:
         return HttpResponseNotFound('Metron has no cover for this issue')
     if result is metron_covers.RATE_LIMITED:
@@ -192,3 +201,30 @@ def fetch_cover(request, id: int):
     if result is None:
         return HttpResponse('Could not get the cover from Metron', status=502)
     return JsonResponse({'id': id, 'type': os.path.splitext(result)[1].lstrip('.')})
+
+
+def _lookup_id(request, id: int) -> int:
+    parent = request.GET.get('parent')
+    return int(parent) if parent and parent.isdigit() else id
+
+
+def metron_options(request, id: int):
+    """The covers Metron has for the issue (or, with ?parent=, for the issue it is a variant of):
+    [{"id", "name"}], the standard cover first (empty name), for the app to pick from."""
+    if not metron_covers.enabled():
+        return HttpResponse('Fetching covers is off (set FETCH_COVERS=1 and METRON_TOKEN)', status=403)
+    try:
+        with metron_covers._lock:
+            covers = metron_covers.candidates(_lookup_id(request, id))
+    except metron_covers.RateLimited:
+        return HttpResponse('Metron is busy, try again shortly', status=429)
+    except (OSError, ValueError):
+        return HttpResponse('Could not get the covers from Metron', status=502)
+    return JsonResponse([c.as_dict() for c in covers], safe=False)
+
+
+def metron_preview(request, id: int, choice: str):
+    data = metron_covers.preview(_lookup_id(request, id), choice)
+    if data is None:
+        return HttpResponseNotFound()
+    return HttpResponse(data, content_type=mimetypes.guess_type('x.' + (_image_extension(data) or 'jpg'))[0])

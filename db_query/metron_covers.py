@@ -6,9 +6,11 @@ burst, 5000 sustained).
 
 For personal use: covers are copyrighted, so keep the server to yourself and credit Metron.
 """
+import hashlib
 import json
 import logging
 import os
+import re
 import threading
 import time
 import urllib.error
@@ -81,11 +83,91 @@ def _get(url: str, accept: str, auth: bool) -> bytes:
         raise
 
 
-def fetch(issue_id: int, covers_dir: str, image_extension):
-    """Looks the issue up on Metron and saves its cover (replacing any other format of it).
+def _api(url: str) -> dict:
+    try:
+        return json.loads(_get(url, 'application/json', auth=True))
+    except RateLimited:
+        # another worker may have used the window up: wait for the next one and try once more
+        return json.loads(_get(url, 'application/json', auth=True))
 
-    Returns the file's path, NO_COVER if Metron has none, RATE_LIMITED if its limit means trying
-    again shortly, or None if it could not be got (off, unreachable, or not an image).
+
+class Cover:
+    """One cover Metron has for an issue: the standard one (name None) or a variant."""
+
+    def __init__(self, image: str, name: str | None):
+        self.image = image
+        self.name = name
+        self.id = hashlib.sha1(image.encode()).hexdigest()[:12]
+
+    def as_dict(self) -> dict:
+        return {'id': self.id, 'name': self.name or ''}
+
+
+_candidates_cache: dict = {}
+CACHE_SECONDS = 600
+
+
+def candidates(gcd_id: int) -> list:
+    """The standard cover and the variants Metron has for the issue (given by GCD id), or [].
+
+    Kept for a few minutes: the picker asks for these and then for each preview and the choice.
+    """
+    now = time.time()
+    cached = _candidates_cache.get(gcd_id)
+    if cached and now - cached[0] < CACHE_SECONDS:
+        return cached[1]
+    found = _api(f'{API}?gcd_id={int(gcd_id)}').get('results', [])
+    covers = []
+    if found:
+        detail = _api(f"{API}{found[0]['id']}/")
+        if detail.get('image'):
+            covers.append(Cover(detail['image'], None))
+        covers += [Cover(v['image'], v.get('name') or 'Variant') for v in detail.get('variants') or [] if v.get('image')]
+    covers = [c for c in covers if urllib.parse.urlparse(c.image).hostname in IMAGE_HOSTS]
+    _candidates_cache[gcd_id] = (now, covers)
+    return covers
+
+
+_NOISE = re.compile(r'\b(cover|variant|edition|exclusive|the)\b')
+
+
+def _normal(name: str) -> str:
+    return ' '.join(_NOISE.sub(' ', re.sub(r'[^a-z0-9 ]+', ' ', name.lower())).split())
+
+
+def match_variant(name: str, covers: list):
+    """The one variant Metron names the way the GCD does ("Second Printing" and "Second Printing
+    Cover"), or None when none or several fit. Generic names ("Variant Cover") never match."""
+    wanted = _normal(name or '')
+    if not wanted:
+        return None
+    fits = [c for c in covers if c.name and _normal(c.name) == wanted]
+    return fits[0] if len(fits) == 1 else None
+
+
+def preview(gcd_id: int, choice: str):
+    """The bytes of one of the candidate covers, or None."""
+    if not enabled():
+        return None
+    with _lock:
+        try:
+            cover = next((c for c in candidates(gcd_id) if c.id == choice), None)
+            return _get(cover.image, 'image/*', auth=False) if cover else None
+        except (OSError, ValueError, urllib.error.URLError, RateLimited):
+            return None
+
+
+def fetch(issue_id: int, covers_dir: str, image_extension, parent: int | None = None,
+          name: str | None = None, choice: str | None = None):
+    """Gets the issue's cover from Metron and saves it (replacing any other format of it).
+
+    For a variant issue, [parent] is the GCD id of the issue it is a variant of, and the cover is
+    the variant of that issue Metron names [name], or the one picked ([choice], from candidates()).
+    A plain issue gets Metron's standard cover.
+
+    Returns the file's path, NO_COVER if Metron has none (or no variant that clearly fits),
+    RATE_LIMITED if its limit means trying again shortly, or None if it could not be got (off,
+    unreachable, or not an image).
 
     image_extension(bytes) gives 'jpg', 'png', ... for image data and None for anything else.
     """
@@ -93,17 +175,19 @@ def fetch(issue_id: int, covers_dir: str, image_extension):
         return None
     with _lock:
         try:
-            try:
-                found = json.loads(_get(f'{API}?gcd_id={int(issue_id)}', 'application/json', auth=True))
-            except RateLimited:
-                # another worker may have used the window up: wait for the next one and try once more
-                found = json.loads(_get(f'{API}?gcd_id={int(issue_id)}', 'application/json', auth=True))
-            image = next((r.get('image') for r in found.get('results', []) if r.get('image')), None)
+            if parent is None and choice is None:
+                found = _api(f'{API}?gcd_id={int(issue_id)}')
+                image = next((r.get('image') for r in found.get('results', []) if r.get('image')), None)
+                if image is not None and urllib.parse.urlparse(image).hostname not in IMAGE_HOSTS:
+                    log.warning('Metron cover for %s is on an unexpected host: %s', issue_id, image)
+                    return None
+            else:
+                covers = candidates(parent or issue_id)
+                picked = (next((c for c in covers if c.id == choice), None) if choice
+                          else match_variant(name, covers))
+                image = picked.image if picked else None
             if image is None:
                 return NO_COVER
-            if urllib.parse.urlparse(image).hostname not in IMAGE_HOSTS:
-                log.warning('Metron cover for %s is on an unexpected host: %s', issue_id, image)
-                return None
             data = _get(image, 'image/*', auth=False)
         except RateLimited:
             log.warning('Metron rate limit reached; not fetching %s now', issue_id)
