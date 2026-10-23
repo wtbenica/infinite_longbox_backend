@@ -187,6 +187,9 @@ def fetch_cover(request, id: int):
     """
     if not metron_covers.enabled():
         return HttpResponse('Fetching covers is off (set FETCH_COVERS=1 and METRON_TOKEN)', status=403)
+    if not _issue_exists(id):
+        # only issues the GCD has: the endpoint isn't a way to put files under any number
+        return HttpResponseNotFound('No such issue')
     parent = request.GET.get('parent')
     parent = int(parent) if parent and parent.isdigit() else None
     result = metron_covers.fetch(
@@ -203,6 +206,11 @@ def fetch_cover(request, id: int):
     if result is None:
         return HttpResponse('Could not get the cover from Metron', status=502)
     return JsonResponse({'id': id, 'type': os.path.splitext(result)[1].lstrip('.')})
+
+
+def _issue_exists(id: int) -> bool:
+    from .models import GcdIssue
+    return GcdIssue.objects.filter(pk=id).exists()
 
 
 def _variants_of(parent: int) -> int:

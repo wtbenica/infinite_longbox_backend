@@ -63,6 +63,18 @@ def _wait_for_window() -> None:
         time.sleep(wait)
 
 
+class _SameFamilyRedirects(urllib.request.HTTPRedirectHandler):
+    """Follows a redirect only to Metron's own hosts, so neither the token nor a download can be sent elsewhere."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if urllib.parse.urlparse(newurl).hostname not in IMAGE_HOSTS:
+            raise urllib.error.URLError(f'redirect to {newurl} refused')
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_opener = urllib.request.build_opener(_SameFamilyRedirects)
+
+
 def _get(url: str, accept: str, auth: bool) -> bytes:
     headers = {'User-Agent': 'InfiniteLongbox-personal/1.0', 'Accept': accept}
     if auth:  # the token goes to the API only, never to the image host
@@ -70,7 +82,7 @@ def _get(url: str, accept: str, auth: bool) -> bytes:
         _wait_for_window()
     request = urllib.request.Request(url, headers=headers)
     try:
-        with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
+        with _opener.open(request, timeout=TIMEOUT) as response:
             if auth:
                 _note_limits(response.headers)
             return response.read(MAX_BYTES + 1)
@@ -105,6 +117,7 @@ class Cover:
 
 _candidates_cache: dict = {}
 CACHE_SECONDS = 600
+CACHE_ENTRIES = 200
 
 
 def candidates(gcd_id: int) -> list:
@@ -124,6 +137,10 @@ def candidates(gcd_id: int) -> list:
             covers.append(Cover(detail['image'], None))
         covers += [Cover(v['image'], v.get('name') or 'Variant') for v in detail.get('variants') or [] if v.get('image')]
     covers = [c for c in covers if urllib.parse.urlparse(c.image).hostname in IMAGE_HOSTS]
+    # a long-running server must not keep every issue ever asked about
+    if len(_candidates_cache) >= CACHE_ENTRIES:
+        for stale in sorted(_candidates_cache, key=lambda k: _candidates_cache[k][0])[:CACHE_ENTRIES // 2]:
+            del _candidates_cache[stale]
     _candidates_cache[gcd_id] = (now, covers)
     return covers
 

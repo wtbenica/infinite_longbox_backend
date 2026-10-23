@@ -122,6 +122,7 @@ class FetchCoverViewTest(SimpleTestCase):
         self.addCleanup(self.dir.cleanup)
         for patcher in (
             mock.patch.dict(os.environ, {'FETCH_COVERS': '1', 'METRON_TOKEN': 't', 'COVERS_DIR': self.dir.name}),
+            mock.patch.object(local_covers, '_issue_exists', return_value=True),
         ):
             patcher.start()
             self.addCleanup(patcher.stop)
@@ -151,3 +152,19 @@ class FetchCoverViewTest(SimpleTestCase):
         with mock.patch.object(metron_covers, 'fetch') as fetch:
             self.assertEqual(self.client.get('/db_query/issue/id/7/cover').status_code, 404)
         fetch.assert_not_called()
+
+
+class FetchCoverGuardsTest(SimpleTestCase):
+    def test_an_issue_the_gcd_does_not_have_is_not_fetched_for(self):
+        with mock.patch.dict(os.environ, {'FETCH_COVERS': '1', 'METRON_TOKEN': 't'}), \
+                mock.patch.object(local_covers, '_issue_exists', return_value=False), \
+                mock.patch.object(metron_covers, 'fetch') as fetch:
+            response = self.client.post('/db_query/issue/id/987654321/cover/fetch')
+        self.assertEqual(response.status_code, 404)
+        fetch.assert_not_called()
+
+    def test_redirects_stay_on_metron(self):
+        handler = metron_covers._SameFamilyRedirects()
+        request = mock.Mock(full_url='https://metron.cloud/x', headers={}, origin_req_host='metron.cloud', unverifiable=False)
+        with self.assertRaises(metron_covers.urllib.error.URLError):
+            handler.redirect_request(request, None, 302, 'Found', {}, 'https://evil.example/x.jpg')
