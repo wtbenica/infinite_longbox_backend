@@ -91,21 +91,33 @@ class MetronVariantsTest(MetronCoversTest):
         self.assertEqual(get.call_args_list[-1].args[0], 'https://static.metron.cloud/1.jpg')
 
     def test_generic_and_ambiguous_names_do_not_match(self):
-        self.assertIs(self.fetch(issue_answers('Variant Cover'), parent=5, name='Tim Sale Cover')[0], metron_covers.NO_COVER)
+        self.assertIs(self.fetch(issue_answers('Variant Cover'), parent=5, name='Tim Sale Cover', siblings=[(7, 'Tim Sale Cover'), (9, 'X Cover')])[0], metron_covers.AMBIGUOUS)
         metron_covers._candidates_cache.clear()
-        self.assertIs(self.fetch(issue_answers('Foil Cover', 'Foil Variant'), parent=5, name='Foil')[0], metron_covers.NO_COVER)
+        self.assertIs(self.fetch(issue_answers('Foil Cover', 'Foil Variant'), parent=5, name='Foil', siblings=[(7, 'Foil')])[0], metron_covers.AMBIGUOUS)
 
-    def test_the_only_variant_is_it_when_the_gcd_knows_only_one(self):
-        path, get = self.fetch(issue_answers('Variant Cover') + [JPEG], parent=5, name='Tim Sale Cover', sole_variant=True)
+    def test_the_only_variant_is_it_when_it_is_the_only_one_each_side_has(self):
+        path, get = self.fetch(issue_answers('Variant Cover') + [JPEG], parent=5, name='Tim Sale Cover', siblings=[(7, 'Tim Sale Cover')])
         self.assertEqual(get.call_args_list[-1].args[0], 'https://static.metron.cloud/0.jpg')
         self.assertIsNotNone(path)
 
-    def test_one_metron_variant_is_not_guessed_when_the_gcd_has_more(self):
-        path, _ = self.fetch(issue_answers('Variant Cover'), parent=5, name='Tim Sale Cover', sole_variant=False)
-        self.assertIs(path, metron_covers.NO_COVER)
+    def test_a_variant_is_paired_by_elimination(self):
+        # the GCD has Second Printing (matches Metron's) and this one; Metron has one more cover
+        siblings = [(7, 'Tim Sale Cover'), (8, 'Second Printing')]
+        path, get = self.fetch(issue_answers('Second Printing Cover', 'Variant Cover') + [JPEG], parent=5, name='Tim Sale Cover', siblings=siblings)
+        self.assertEqual(get.call_args_list[-1].args[0], 'https://static.metron.cloud/1.jpg')
+        self.assertIsNotNone(path)
+
+    def test_one_metron_variant_is_not_guessed_when_the_gcd_has_more_unmatched(self):
+        siblings = [(7, 'Tim Sale Cover'), (8, 'Tony Daniel Cover')]
+        path, _ = self.fetch(issue_answers('Variant Cover'), parent=5, name='Tim Sale Cover', siblings=siblings)
+        self.assertIs(path, metron_covers.AMBIGUOUS)
 
     def test_two_metron_variants_are_not_guessed_either(self):
-        path, _ = self.fetch(issue_answers('A', 'B'), parent=5, name='Tim Sale Cover', sole_variant=True)
+        path, _ = self.fetch(issue_answers('A', 'B'), parent=5, name='Tim Sale Cover', siblings=[(7, 'Tim Sale Cover')])
+        self.assertIs(path, metron_covers.AMBIGUOUS)
+
+    def test_no_variants_on_metron_is_no_cover(self):
+        path, _ = self.fetch(issue_answers(), parent=5, name='Tim Sale Cover', siblings=[(7, 'Tim Sale Cover')])
         self.assertIs(path, metron_covers.NO_COVER)
 
     def test_a_picked_cover_is_the_one_saved(self):
@@ -137,6 +149,9 @@ class FetchCoverViewTest(SimpleTestCase):
 
     def test_none_on_metron(self):
         self.assertEqual(self.post(metron_covers.NO_COVER).status_code, 404)
+
+    def test_covers_but_none_clearly_this_one(self):
+        self.assertEqual(self.post(metron_covers.AMBIGUOUS).status_code, 409)
 
     def test_rate_limited(self):
         self.assertEqual(self.post(metron_covers.RATE_LIMITED).status_code, 429)

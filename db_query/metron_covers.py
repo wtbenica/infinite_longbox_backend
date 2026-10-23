@@ -25,6 +25,7 @@ MAX_WAIT = 45  # seconds a request will wait for Metron's burst window; longer a
 TIMEOUT = 30
 MAX_BYTES = 15 * 1024 * 1024
 
+AMBIGUOUS = object()  # what fetch() answers when Metron has covers for the issue but none clearly this one
 RATE_LIMITED = object()  # what fetch() answers when Metron's limit would make the request wait too long
 NO_COVER = object()  # what fetch() answers when Metron has no cover for the issue
 
@@ -174,23 +175,42 @@ def preview(gcd_id: int, choice: str):
             return None
 
 
-def only_variant(covers: list):
-    """The one variant Metron has, when it has exactly one (the standard cover aside), else None."""
-    variants = [c for c in covers if c.name]
-    return variants[0] if len(variants) == 1 else None
+def pick_variant(issue_id: int, name: str | None, siblings: list, covers: list):
+    """The variant Metron has for the GCD variant [issue_id], or None if that can't be told.
+
+    By name first. Failing that, by elimination: the GCD's other variants of the same issue
+    ([siblings], a list of (id, variant name)) are matched to Metron's by name and set aside, and if
+    exactly one Metron variant is left and this is the only GCD variant left, they are the pair.
+    More than one left on either side and any pairing would be a guess.
+    """
+    direct = match_variant(name or '', covers)
+    if direct:
+        return direct
+    taken = set()
+    unmatched = []
+    for sibling_id, sibling_name in siblings:
+        found = match_variant(sibling_name or '', covers)
+        if found and sibling_id != issue_id:
+            taken.add(found.id)
+        elif not found:
+            unmatched.append(sibling_id)
+    free = [c for c in covers if c.name and c.id not in taken]
+    if len(free) == 1 and unmatched == [issue_id]:
+        return free[0]
+    return None
 
 
 def fetch(issue_id: int, covers_dir: str, image_extension, parent: int | None = None,
-          name: str | None = None, choice: str | None = None, sole_variant: bool = False):
+          name: str | None = None, choice: str | None = None, siblings: list | None = None):
     """Gets the issue's cover from Metron and saves it (replacing any other format of it).
 
     For a variant issue, [parent] is the GCD id of the issue it is a variant of, and the cover is
     the variant of that issue Metron names [name], or the one picked ([choice], from candidates()).
-    If neither fits and [sole_variant] says the GCD knows just one variant of the parent, that is
-    this issue, so the one variant Metron has is it. A plain issue gets Metron's standard cover.
+    If the name doesn't fit, [siblings] (the GCD's variants of the parent, as (id, name)) are used to
+    pair them off (see pick_variant). A plain issue gets Metron's standard cover.
 
-    Returns the file's path, NO_COVER if Metron has none (or no variant that clearly fits),
-    RATE_LIMITED if its limit means trying again shortly, or None if it could not be got (off,
+    Returns the file's path, NO_COVER if Metron has no cover for the issue, AMBIGUOUS if it has
+    variants but none that clearly is this one, RATE_LIMITED if its limit means trying again shortly, or None if it could not be got (off,
     unreachable, or not an image).
 
     image_extension(bytes) gives 'jpg', 'png', ... for image data and None for anything else.
@@ -210,8 +230,10 @@ def fetch(issue_id: int, covers_dir: str, image_extension, parent: int | None = 
                 if choice:
                     picked = next((c for c in covers if c.id == choice), None)
                 else:
-                    picked = match_variant(name, covers) or (only_variant(covers) if sole_variant else None)
+                    picked = pick_variant(issue_id, name, siblings or [], covers)
                 image = picked.image if picked else None
+                if image is None and any(c.name for c in covers):
+                    return AMBIGUOUS
             if image is None:
                 return NO_COVER
             data = _get(image, 'image/*', auth=False)

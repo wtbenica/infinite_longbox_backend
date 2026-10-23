@@ -183,7 +183,7 @@ def fetch_cover(request, id: int):
     """Fetches the issue's cover from Metron and stores it, replacing any existing one.
 
     200 {"id", "type"} when saved; 403 when fetching is off; 404 when Metron has no cover for the
-    issue; 429 when Metron's rate limit means trying again shortly; 502 when Metron could not be reached or gave something that is not an image.
+    issue; 409 when it has some but none clearly this variant's (the app offers a choice); 429 when Metron's rate limit means trying again shortly; 502 when Metron could not be reached or gave something that is not an image.
     """
     if not metron_covers.enabled():
         return HttpResponse('Fetching covers is off (set FETCH_COVERS=1 and METRON_TOKEN)', status=403)
@@ -197,10 +197,12 @@ def fetch_cover(request, id: int):
         parent=parent,
         name=request.GET.get('name'),
         choice=request.GET.get('choice'),
-        sole_variant=parent is not None and _variants_of(parent) == 1,
+        siblings=_variant_names(parent) if parent is not None else None,
     )
     if result is metron_covers.NO_COVER:
         return HttpResponseNotFound('Metron has no cover for this issue')
+    if result is metron_covers.AMBIGUOUS:
+        return HttpResponse('Metron has covers for this issue but none clearly this one', status=409)
     if result is metron_covers.RATE_LIMITED:
         return HttpResponse('Metron is busy, try again shortly', status=429)
     if result is None:
@@ -213,10 +215,10 @@ def _issue_exists(id: int) -> bool:
     return GcdIssue.objects.filter(pk=id).exists()
 
 
-def _variants_of(parent: int) -> int:
-    """How many variants of the issue the GCD knows."""
+def _variant_names(parent: int) -> list:
+    """The GCD's variants of the issue, as (id, variant name)."""
     from .models import GcdIssue
-    return GcdIssue.objects.filter(variant_of=parent).count()
+    return list(GcdIssue.objects.filter(variant_of=parent).values_list('id', 'variant_name'))
 
 
 def _lookup_id(request, id: int) -> int:
