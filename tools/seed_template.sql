@@ -7,7 +7,8 @@ CREATE TABLE `Appearance` (`appearanceId` INTEGER PRIMARY KEY AUTOINCREMENT NOT 
 CREATE TABLE `BondType` (`bondTypeId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `description` TEXT NOT NULL, `notes` TEXT, `lastUpdated` TEXT NOT NULL);
 CREATE TABLE `Brand` (`brandId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `yearBegan` TEXT, `yearEnded` TEXT, `notes` TEXT, `url` TEXT, `issueCount` INTEGER NOT NULL, `yearBeganUncertain` INTEGER NOT NULL, `yearEndedUncertain` INTEGER NOT NULL, `lastUpdated` TEXT NOT NULL);
 CREATE TABLE `Character` (`characterId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `alterEgo` TEXT, `publisher` INTEGER NOT NULL, `lastUpdated` TEXT NOT NULL, FOREIGN KEY(`publisher`) REFERENCES `Publisher`(`publisherId`) ON UPDATE NO ACTION ON DELETE CASCADE );
-CREATE TABLE `CollectionItem` (`collectionItemId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `issue` INTEGER NOT NULL, `series` INTEGER NOT NULL, `userCollection` INTEGER NOT NULL, `signedBy` TEXT, `storageLocation` TEXT, `condition` TEXT, `notes` TEXT, `lastUpdated` TEXT NOT NULL, FOREIGN KEY(`issue`) REFERENCES `Issue`(`issueId`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`series`) REFERENCES `Series`(`seriesId`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`userCollection`) REFERENCES `UserCollection`(`userCollectionId`) ON UPDATE NO ACTION ON DELETE CASCADE );
+CREATE TABLE `CollectionItem` (`collectionItemId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `issue` INTEGER NOT NULL, `series` INTEGER NOT NULL, `userCollection` INTEGER NOT NULL, `storageLocation` TEXT, `condition` TEXT, `notes` TEXT, `lastUpdated` TEXT NOT NULL, FOREIGN KEY(`issue`) REFERENCES `Issue`(`issueId`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`series`) REFERENCES `Series`(`seriesId`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`userCollection`) REFERENCES `UserCollection`(`userCollectionId`) ON UPDATE NO ACTION ON DELETE CASCADE );
+CREATE TABLE `CopySigner` (`collectionItem` INTEGER NOT NULL, `creator` INTEGER NOT NULL, PRIMARY KEY(`collectionItem`, `creator`), FOREIGN KEY(`collectionItem`) REFERENCES `CollectionItem`(`collectionItemId`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`creator`) REFERENCES `Creator`(`creatorId`) ON UPDATE NO ACTION ON DELETE CASCADE );
 CREATE TABLE `Cover` (`coverId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `issue` INTEGER NOT NULL, `coverUri` TEXT, `markedDelete` INTEGER NOT NULL, `lastUpdated` TEXT NOT NULL, FOREIGN KEY(`issue`) REFERENCES `Issue`(`issueId`) ON UPDATE NO ACTION ON DELETE CASCADE );
 CREATE TABLE `Creator` (`creatorId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `sortName` TEXT NOT NULL, `bio` TEXT, `lastUpdated` TEXT NOT NULL);
 CREATE TABLE `Credit` (`creditId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `story` INTEGER NOT NULL, `nameDetail` INTEGER NOT NULL, `role` INTEGER NOT NULL, `issue` INTEGER, `series` INTEGER, `lastUpdated` TEXT NOT NULL, FOREIGN KEY(`story`) REFERENCES `Story`(`storyId`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`nameDetail`) REFERENCES `NameDetail`(`nameDetailId`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`role`) REFERENCES `Role`(`roleId`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`issue`) REFERENCES `Issue`(`issueId`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`series`) REFERENCES `Series`(`seriesId`) ON UPDATE NO ACTION ON DELETE CASCADE );
@@ -32,6 +33,7 @@ CREATE INDEX `index_Character_publisher` ON `Character` (`publisher`);
 CREATE UNIQUE INDEX `index_CollectionItem_issue_userCollection` ON `CollectionItem` (`issue`, `userCollection`);
 CREATE INDEX `index_CollectionItem_series` ON `CollectionItem` (`series`);
 CREATE INDEX `index_CollectionItem_userCollection` ON `CollectionItem` (`userCollection`);
+CREATE INDEX `index_CopySigner_creator` ON `CopySigner` (`creator`);
 CREATE UNIQUE INDEX `index_Cover_issue` ON `Cover` (`issue`);
 CREATE INDEX `index_Creator_name` ON `Creator` (`name`);
 CREATE INDEX `index_Creator_sortName` ON `Creator` (`sortName`);
@@ -68,5 +70,5 @@ INSERT INTO `Series` (seriesId, seriesName, sortName, volume, publisher, startDa
 INSERT INTO `UserCollection` (userCollectionId, name, permanent, lastUpdated) VALUES (1, 'My Collection', 1, '2026-10-12');
 INSERT INTO `UserCollection` (userCollectionId, name, permanent, lastUpdated) VALUES (2, 'Wish List', 1, '2026-10-12');
 
-INSERT INTO room_master_table (id, identity_hash) VALUES (42, 'e3b2ef9e93723a614e6a64f09bbf9936');
-PRAGMA user_version = 2;
+INSERT INTO room_master_table (id, identity_hash) VALUES (42, '9547207247828bfa222b78d92682bea8');
+PRAGMA user_version = 3;
