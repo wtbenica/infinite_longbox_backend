@@ -10,11 +10,14 @@
 -- decide. A row with no alter ego is never merged with one that has an alter ego.
 --
 -- The row kept is one that is linked to a GCD record, otherwise the one with the most
--- appearances, otherwise the oldest. Rows linked to GCD records are never removed. The others'
+-- appearances, otherwise the oldest. Rows linked to GCD records (a character or a team) are never
+-- removed. The others'
 -- appearances move to it; a story that has both has one appearance.
 --
 -- Safe to run again: once rows are merged there is nothing left to merge.
 -- Placeholder: {{targetSchema}}, the database holding the m_* tables.
+
+ALTER TABLE `{{targetSchema}}`.m_character ADD COLUMN IF NOT EXISTS gcd_group_id INT NULL;
 
 DROP TABLE IF EXISTS `{{targetSchema}}`.merge_key_work;
 DROP TABLE IF EXISTS `{{targetSchema}}`.merge_best_work;
@@ -38,7 +41,7 @@ SELECT m.id,
        m.publisher_id,
        LEFT(LOWER(REGEXP_REPLACE(m.name, '[^[:alnum:]]+', '')), 255),
        LEFT(LOWER(REGEXP_REPLACE(IFNULL(m.alter_ego, ''), '[^[:alnum:]]+', '')), 255),
-       IF(m.gcd_character_id IS NULL, 0, 1)
+       IF(m.gcd_character_id IS NULL AND m.gcd_group_id IS NULL, 0, 1)
 FROM `{{targetSchema}}`.m_character m;
 
 UPDATE `{{targetSchema}}`.merge_key_work k
@@ -109,7 +112,7 @@ SELECT m.id,
        m.publisher_id,
        LEFT(LOWER(REGEXP_REPLACE(m.name, '[^[:alnum:]]+', '')), 255),
        LEFT(LOWER(REGEXP_REPLACE(IFNULL(m.alter_ego, ''), '[^[:alnum:]]+', '')), 255),
-       IF(m.gcd_character_id IS NULL, 0, 1)
+       IF(m.gcd_character_id IS NULL AND m.gcd_group_id IS NULL, 0, 1)
 FROM `{{targetSchema}}`.m_character m;
 
 UPDATE `{{targetSchema}}`.merge_key_work k

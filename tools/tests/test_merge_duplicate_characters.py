@@ -16,7 +16,7 @@ SCRIPT = (ROOT / "tools" / "merge_duplicate_characters.sql").read_text().replace
 TABLES = """
 CREATE TABLE m_character (id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255) NOT NULL,
     alter_ego VARCHAR(255), publisher_id INT NOT NULL, gcd_character_id INT NULL,
-    UNIQUE KEY name_2 (name, alter_ego, publisher_id));
+    gcd_group_id INT NULL, UNIQUE KEY name_2 (name, alter_ego, publisher_id));
 CREATE TABLE m_character_appearance (id INT PRIMARY KEY AUTO_INCREMENT, details VARCHAR(255),
     character_id INT NOT NULL, story_id INT NOT NULL, notes VARCHAR(255), membership LONGTEXT,
     issue_id INT NOT NULL DEFAULT 1, series_id INT NOT NULL DEFAULT 1, gcd_story_character_id INT NULL);
@@ -46,6 +46,11 @@ INSERT INTO m_character (id, name, alter_ego, publisher_id, gcd_character_id) VA
     -- two linked characters with the same name: GCD's, so neither is removed
     (15, 'Maggie', NULL, 1, 200),
     (16, 'maggie', NULL, 1, 201);
+-- a character and a team of one name, GCD's both, and an extracted one of that name
+INSERT INTO m_character (id, name, alter_ego, publisher_id, gcd_character_id, gcd_group_id) VALUES
+    (17, 'Fenris', NULL, 1, 300, NULL),
+    (18, 'FENRIS!', NULL, 1, NULL, 5),
+    (19, 'Fenris?', NULL, 1, NULL, NULL);
 """
 
 
@@ -117,6 +122,10 @@ class MergeDuplicateCharactersTest(unittest.TestCase):
 
     def test_linked_characters_are_never_removed(self):
         self.assertTrue({15, 16} <= set(self.ids()))
+
+    def test_a_team_is_never_removed_or_merged_into_a_character_of_its_name(self):
+        self.assertTrue({17, 18} <= set(self.ids()))
+        self.assertNotIn(19, self.ids())
 
     def test_running_it_again_changes_nothing(self):
         before = (mariadb("SELECT id FROM m_character ORDER BY id", SCHEMA),
