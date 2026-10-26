@@ -161,6 +161,13 @@ VALUES ('', 500, 1000, NULL, NULL, 100, 1),
        ('', 507, 2000, NULL, NULL, 200, 2),
        ('', 508, 2002, NULL, NULL, 200, 2),
        ('', 511, 2003, NULL, NULL, 200, 2);
+
+-- Storm is the alias of Ororo Munroe: story 2000 links both, story 2001 only the person
+INSERT INTO gcd_character VALUES (30, 'Ororo Munroe', '', 0), (31, 'Storm', '', 0);
+INSERT INTO gcd_character_name_detail VALUES (50, 30, 'Ororo Munroe', 0), (51, 31, 'Storm', 0);
+INSERT INTO gcd_character_relation VALUES (30, 31, 2, 30);
+INSERT INTO gcd_story_character VALUES (40, 2000, 50, NULL, 0, 0, 0, '', 0), (41, 2000, 51, NULL, 0, 0, 0, '', 0),
+    (42, 2001, 50, NULL, 0, 0, 0, '', 0);
 """
 
 
@@ -360,6 +367,12 @@ class LinkedCharactersTest(unittest.TestCase):
 
     def test_a_reprint_of_a_deleted_record_stands_alone(self):
         self.assertEqual(self.row("gcd_character_id = 15")[0][1:], ["Orphan Copy", "NULL", "15"])
+
+    def test_a_story_linking_an_alias_and_its_person_lists_the_alias_only(self):
+        both = [r[0] for r in self.appearances(2000) if r[0] in ("Ororo Munroe", "Storm")]
+        self.assertEqual(both, ["Storm"])
+        alone = [r[0] for r in self.appearances(2001) if r[0] in ("Ororo Munroe", "Storm")]
+        self.assertEqual(alone, ["Ororo Munroe"])
 
     def test_helper_tables_are_cleaned_up(self):
         left = mariadb(f"SHOW TABLES LIKE '%\\_work'", SCHEMA)
