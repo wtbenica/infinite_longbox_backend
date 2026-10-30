@@ -19,6 +19,10 @@
 -- Run it after linked_characters.sql. Safe to run again: it adds what is missing.
 -- Placeholder: {{targetSchema}}, the database holding the gcd_* and m_* tables.
 
+-- Finding a story's duplicate rows by character alone is quadratic for the characters with thousands of them
+ALTER TABLE `{{targetSchema}}`.m_character_appearance
+    ADD INDEX IF NOT EXISTS m_appearance_story_character (story_id, character_id);
+
 ALTER TABLE `{{targetSchema}}`.m_character
     ADD COLUMN IF NOT EXISTS gcd_group_id INT NULL,
     ADD INDEX IF NOT EXISTS m_character_gcd_group (gcd_group_id, publisher_id);

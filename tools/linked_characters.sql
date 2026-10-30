@@ -26,6 +26,10 @@
 -- Safe to run again: it adds what is missing and changes nothing else.
 -- Placeholder: {{targetSchema}}, the database holding the gcd_* and m_* tables.
 
+-- Finding a story's duplicate rows by character alone is quadratic for the characters with thousands of them
+ALTER TABLE `{{targetSchema}}`.m_character_appearance
+    ADD INDEX IF NOT EXISTS m_appearance_story_character (story_id, character_id);
+
 ALTER TABLE `{{targetSchema}}`.m_character
     ADD COLUMN IF NOT EXISTS gcd_character_id INT NULL,
     ADD INDEX IF NOT EXISTS m_character_gcd_character (gcd_character_id, publisher_id);
