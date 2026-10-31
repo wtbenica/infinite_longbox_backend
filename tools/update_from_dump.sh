@@ -6,6 +6,8 @@
 #   tools/update_from_dump.sh --switch             point the server at what was built, restart it
 #   tools/update_from_dump.sh --rollback           put the previous database and seed back
 #   tools/update_from_dump.sh --status             what is live, what is built, how the build is going
+#   tools/update_from_dump.sh --report [OLD NEW]   the rows OLD has and NEW hasn't (default: the last build against what
+#                                                  it was built from); ids are kept in ~/longbox_update/removed_NEW/
 # Run it on the server. It needs the backend (this repo, with its .venv), CreditUpdater installed with
 # `./gradlew installDist` plus its src/main/resources/sql copied beside bin/ (CU_BIN, default ~/CU-dist/bin/CreditUpdater) and the database login in ~/.gcd.cnf.
 set -euo pipefail
@@ -23,6 +25,25 @@ restart() {
     systemctl --user restart "$SERVICE"
     sleep 5
     systemctl --user is-active --quiet "$SERVICE" && curl -sf -m 30 http://127.0.0.1:8000/db_query/seed/meta > /dev/null
+}
+
+# The rows the old database has and the new one hasn't: what the gcd deleted, our pruning dropped, a merge or the
+# empty-character step removed. Ids go to OUT/TABLE.removed, a summary to stdout.
+report() {
+    local old=${1:?} new=${2:?} out=${3:?}
+    local spec t col ids gone added
+    mkdir -p "$out"
+    printf '%-26s %9s %9s  %s\n' table removed added "a few of the removed"
+    for spec in gcd_publisher:name gcd_series:name gcd_issue:number gcd_story:title gcd_creator:gcd_official_name \
+                gcd_creator_name_detail:name m_character:name; do
+        t=${spec%%:*}; col=${spec##*:}
+        db -N -e "SELECT o.id FROM $old.$t o LEFT JOIN $new.$t n ON n.id = o.id WHERE n.id IS NULL ORDER BY o.id" > "$out/$t.removed"
+        gone=$(wc -l < "$out/$t.removed")
+        added=$(count "$new" "SELECT COUNT(*) FROM $t n LEFT JOIN $old.$t o ON o.id = n.id WHERE o.id IS NULL")
+        ids=$(shuf -n 3 "$out/$t.removed" | paste -sd, -)
+        printf '%-26s %9s %9s  %s\n' "$t" "$gone" "$added" \
+            "$([ -z "$ids" ] || db -N "$old" -e "SELECT GROUP_CONCAT(CONCAT(id, ' ', LEFT($col, 30)) SEPARATOR ' | ') FROM $t WHERE id IN ($ids)")"
+    done
 }
 
 build() {
@@ -45,6 +66,8 @@ build() {
     rm -f "$(dirname "$CU_BIN")/../progress.json"
     (cd "$(dirname "$CU_BIN")/.." && "$CU_BIN" --prepare "$new" --base "$live") > "$STATE/creditupdater.log" 2>&1
     grep -q "Successfully updated $new" "$STATE/creditupdater.log" || { echo "CreditUpdater did not finish; see $STATE/creditupdater.log"; exit 1; }
+    echo "$(date +%T) rows $live has and $new hasn't:"
+    report "$live" "$new" "$STATE/removed_$new" | tee "$STATE/removed_$new/report.txt" || true
     echo "$(date +%T) building the seed"
     local env seed
     env=$(mktemp "$STATE/env.XXXXXX"); chmod 600 "$env"
@@ -101,10 +124,17 @@ status() {
 }
 
 case ${1:-} in
+    --report)
+        if [ $# -ge 3 ]; then report "$2" "$3" "$STATE/removed_$3"
+        else
+            [ -f "$STATE/built" ] || { echo "nothing built"; exit 1; }
+            . "$STATE/built"; cat "$STATE/removed_$NEW/report.txt"
+        fi ;;
+    --*) echo "unknown option $1"; exit 1 ;;
     --switch) switch ;;
     --rollback) rollback ;;
     --status) status ;;
-    -h|--help|"") sed -n '2,10p' "$0" ;;
+    -h|--help|"") sed -n '2,12p' "$0" ;;
     *)
         if [ -z "${LONGBOX_BG:-}" ]; then
             LONGBOX_BG=1 nohup "$(readlink -f "$0")" "$@" > "$STATE/build.log" 2>&1 &
