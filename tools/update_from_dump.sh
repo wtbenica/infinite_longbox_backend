@@ -7,7 +7,7 @@
 #   tools/update_from_dump.sh --rollback           put the previous database and seed back
 #   tools/update_from_dump.sh --status             what is live, what is built, how the build is going
 # Run it on the server. It needs the backend (this repo, with its .venv), CreditUpdater installed with
-# `./gradlew installDist` (CU_BIN, default ~/CU-dist/bin/CreditUpdater) and the database login in ~/.gcd.cnf.
+# `./gradlew installDist` plus its src/main/resources/sql copied beside bin/ (CU_BIN, default ~/CU-dist/bin/CreditUpdater) and the database login in ~/.gcd.cnf.
 set -euo pipefail
 
 B=${BACKEND:-$HOME/infinite_longbox_backend}
@@ -40,7 +40,10 @@ build() {
         *) cat "$dump" ;;
     esac | db "$new"
     echo "$(date +%T) running CreditUpdater (a few hours)"
-    "$CU_BIN" --prepare "$new" --base "$live" > "$STATE/creditupdater.log" 2>&1
+    # CreditUpdater finds its SQL by a path relative to where it runs: src/main/resources/sql next to bin/
+    # a new database starts its extraction from the beginning, not where an earlier run left off
+    rm -f "$(dirname "$CU_BIN")/../progress.json"
+    (cd "$(dirname "$CU_BIN")/.." && "$CU_BIN" --prepare "$new" --base "$live") > "$STATE/creditupdater.log" 2>&1
     grep -q "Successfully updated $new" "$STATE/creditupdater.log" || { echo "CreditUpdater did not finish; see $STATE/creditupdater.log"; exit 1; }
     echo "$(date +%T) building the seed"
     local env seed
